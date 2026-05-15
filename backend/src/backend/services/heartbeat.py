@@ -207,10 +207,10 @@ class HeartbeatService:
                 asyncio.get_running_loop().run_in_executor(
                     None, lambda: random_walk_from_center(agent_id, max_depth=5, max_nodes=20),
                 ),
-                timeout=15.0,  # Neo4j 遍历最多 15 秒
+                timeout=30.0,  # Neo4j 遍历最多 30 秒
             )
         except asyncio.TimeoutError:
-            _log.warning("heartbeat: agent=%s Neo4j 遍历超时 (>15s)，跳过本轮", agent_id)
+            _log.warning("heartbeat: agent=%s Neo4j 遍历超时 (>30s)，跳过本轮", agent_id)
             return
 
         if not nodes:
