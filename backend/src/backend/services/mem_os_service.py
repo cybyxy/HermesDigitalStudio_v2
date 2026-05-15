@@ -551,10 +551,20 @@ def get_mos_for_agent(agent_id: str) -> Any | None:
         )
         return None
 
+    # 检查 memos 包是否已安装（非关键依赖，不可用时静默跳过）
+    try:
+        from memos import MOS  # noqa: F811
+    except ImportError:
+        _log.info(
+            "mem_os_service: memos package not installed, skipping MOS init for agent=%s. "
+            "Install with: uv add memos>=0.30.0",
+            agent_id,
+        )
+        return None
+
     _log.info("mem_os_service: Creating MOS instance for agent=%s", agent_id)
 
     try:
-        from memos import MOS
         from memos.configs.mem_os import MOSConfig
         from memos.mem_cube.general import GeneralMemCube
 

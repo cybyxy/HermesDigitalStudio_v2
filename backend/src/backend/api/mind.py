@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import json
-import time
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
+
 
 router = APIRouter(prefix="/mind", tags=["mind"])
 
@@ -49,6 +49,11 @@ class SpatialPerceptionRequest(BaseModel):
     threshold: float = Field(default=150.0, ge=10.0, le=500.0)
 
 
+class SpatialSyncRequest(BaseModel):
+    agent_id: str = Field(..., description="Agent ID，如 default")
+    map_json: dict = Field(..., description="Tiled 地图 JSON 内容")
+
+
 # ═══════════════ DNA 端点 ═══════════════
 
 
@@ -56,7 +61,7 @@ class SpatialPerceptionRequest(BaseModel):
 async def create_dna_neuron(agent_id: str, body: DNANeuronRequest):
     """创建新神经元节点，自动生成 DNA 双链。"""
     try:
-        from backend.services.dna_service import generate_dna, compute_complement
+        from backend.services.dna_service import compute_complement, generate_dna
         from backend.services.neo4j_service import get_neo4j_service
 
         neo4j = get_neo4j_service()
@@ -126,10 +131,9 @@ async def compute_neural_pipeline(body: NeuralComputeRequest):
     """计算电压、传导深度、享乐覆盖、焦耳热。"""
     try:
         from backend.services.neural_current import (
-            compute_full_voltage_pipeline,
-            compute_initial_voltage,
-            compute_conduction_depth,
             accumulate_joule_heat,
+            compute_conduction_depth,
+            compute_full_voltage_pipeline,
         )
 
         # 默认 PAD + 不应期
@@ -323,5 +327,32 @@ async def generate_perception(body: SpatialPerceptionRequest):
         # 为了演示，使用空物品列表
         text = compute_environment_perception(body.agent_x, body.agent_y, [], body.threshold)
         return {"perception_text": text}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/spatial/sync", summary="同步 Tiled 地图物品到 Neo4j")
+async def sync_map_items(body: SpatialSyncRequest):
+    """将 Tiled JSON 中的可交互物品批量写入 Neo4j 图数据库。
+
+    Agent 在聊天中说出「读取 office_layer.json 并同步到 Neo4j」时，
+    由 Agent 读取文件后 POST 到本端点即可触发。
+    """
+    try:
+        from backend.services.neo4j_service import get_neo4j_service
+
+        neo4j = get_neo4j_service()
+        if not neo4j.is_connected():
+            raise HTTPException(status_code=503, detail="Neo4j 未连接")
+
+        result = neo4j.sync_items_from_map(body.agent_id, body.map_json)
+        return {
+            "status": "ok",
+            "agent_id": body.agent_id,
+            "created": result.get("created", 0),
+            "skipped": result.get("skipped", 0),
+        }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
