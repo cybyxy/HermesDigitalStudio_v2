@@ -336,7 +336,7 @@ class GatewayManager:
                 from backend.db.agent import AgentSessionDAO
                 AgentSessionDAO.delete_session(agent_id, session_id)
             except Exception:
-                pass
+                _log.warning("[GatewayManager] failed to delete session from DB: agent=%s session=%s", agent_id, session_id, exc_info=True)
             return {"deleted": True}
 
         info = self._agents.get(agent_id)
@@ -388,7 +388,7 @@ class GatewayManager:
             from backend.db.agent import AgentSessionDAO
             AgentSessionDAO.set_active_session(agent_id, session_id)
         except Exception:
-            pass
+            _log.warning("[GatewayManager] failed to set active session in DB: agent=%s session=%s", agent_id, session_id, exc_info=True)
 
         _log.info("[GatewayManager] resumed session %s (key=%s, agent=%s)", session_id, session_key, agent_id)
         return {"sessionId": session_id, "agentId": agent_id}
@@ -427,7 +427,7 @@ class GatewayManager:
             try:
                 timer.cancel()
             except Exception:
-                pass
+                _log.warning("[GatewayManager] failed to cancel reflection timer during shutdown", exc_info=True)
         with self._lock:
             for agent_id in list(self._agents.keys()):
                 info = self._agents.pop(agent_id, None)

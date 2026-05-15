@@ -18,7 +18,7 @@ _log = logging.getLogger(__name__)
 
 _ASCII_ONLY = re.compile(r"^[\x00-\x7f]+$")
 
-# 用户或其它 Agent 投递的正文若呈现「任务 / 规划 / 步骤…」等编排语义，则向子进程额外注入结构化输出约定（经 ``studio.set_routing_hint`` 合并进 ephemeral）。
+# 用户或其它 Agent 投递的正文若呈现「任务 / 规划 / 步骤…」等编排语义，则向子进程额外注入结构化输出约定（经 &lt;memory-context&gt; 块合并进 prompt）。
 _PLANNING_HINT_SUBSTRINGS = (
     "任务",
     "规划",
@@ -212,12 +212,10 @@ def _submit_with_hint(session_id: str, text: str, attachments: list[str] | None)
 
     hint = "\n\n".join(hint_parts).strip()
 
-    try:
-        r = info.gateway.call("studio.set_routing_hint", {"text": hint})
-        if not r or r.get("error"):
-            _log.debug("studio.set_routing_hint: %s", r)
-    except Exception as exc:
-        _log.debug("studio.set_routing_hint failed: %s", exc)
+    # 将人格/计划/路由 hint 通过 <memory-context> 注入用户 prompt
+    # （vendor StreamingContextScrubber 会自动过滤此块，不进入用户可见输出）
+    if hint:
+        text = f"<memory-context>{hint}</memory-context>\n\n{text}"
 
     ok = mgr.submit_prompt(session_id, text, attachments=attachments)
     if not ok:

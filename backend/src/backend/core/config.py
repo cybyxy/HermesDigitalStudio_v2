@@ -186,16 +186,29 @@ class StudioConfig:
 
     @cached_property
     def port(self) -> int:
-        """后端监听端口。"""
-        return _yaml_or_env_int(
-            "server", "port",
-            env_name="PORT",
-            default=9120,
-        ) or _yaml_or_env_int(
-            "server", "port",
-            env_name="STUDIO_BACKEND_PORT",
-            default=9120,
-        )
+        """后端监听端口。
+
+        优先级：studio.yaml ``server.port`` > ``PORT`` 环境变量 > ``STUDIO_BACKEND_PORT`` 环境变量 > 默认 9120。
+        """
+        yv = _yaml_get("server", "port")
+        if yv is not None:
+            try:
+                return int(yv)
+            except (TypeError, ValueError):
+                pass
+        env_port = _env_or("PORT", "")
+        if env_port:
+            try:
+                return int(env_port)
+            except ValueError:
+                pass
+        env_studio_port = _env_or("STUDIO_BACKEND_PORT", "")
+        if env_studio_port:
+            try:
+                return int(env_studio_port)
+            except ValueError:
+                pass
+        return 9120
 
     @cached_property
     def gateway_ingest_url(self) -> str:
@@ -350,6 +363,21 @@ class StudioConfig:
             default=True,
         )
 
+    @cached_property
+    def heartbeat_spatial_enabled(self) -> bool:
+        """是否启用空间感知空闲行为。"""
+        return _yaml_or_env_bool(
+            "heartbeat", "spatial_enabled",
+            env_name="HERMES_HEARTBEAT_SPATIAL_ENABLED",
+            default=False,
+        )
+
+    @cached_property
+    def mind_config(self) -> dict:
+        """心智架构配置段。"""
+        yv = _yaml_get("mind")
+        return yv if isinstance(yv, dict) else {}
+
     # ── 模型适配器（Gemini / Ollama）────────────────────────────────────
 
     @cached_property
@@ -379,6 +407,53 @@ class StudioConfig:
         if isinstance(yv, dict):
             return yv
         return None
+
+    # ── Embedding 嵌入模型 ───────────────────────────────────────────────
+
+    @cached_property
+    def embedding_model(self) -> str:
+        """sentence-transformers 嵌入模型名称（HuggingFace repo ID 或本地路径）。
+
+        优先级：
+        1. studio.yaml ``embedding.model``
+        2. 环境变量 ``HERMES_EMBEDDING_MODEL``
+        3. 默认 ``all-MiniLM-L6-v2``
+        """
+        return _yaml_or_env(
+            "embedding", "model",
+            env_name="HERMES_EMBEDDING_MODEL",
+            default="all-MiniLM-L6-v2",
+        )
+
+    @cached_property
+    def embedding_dimensions(self) -> int:
+        """嵌入向量的维度。
+
+        优先级：
+        1. studio.yaml ``embedding.dimensions``
+        2. 环境变量 ``HERMES_EMBEDDING_DIMENSIONS``
+        3. 默认 384（与 all-MiniLM-L6-v2 匹配）
+        """
+        return _yaml_or_env_int(
+            "embedding", "dimensions",
+            env_name="HERMES_EMBEDDING_DIMENSIONS",
+            default=384,
+        )
+
+    @cached_property
+    def embedding_cache_dir(self) -> str:
+        """SentenceTransformer 模型缓存目录。
+
+        优先级：
+        1. studio.yaml ``embedding.cache_dir``
+        2. 环境变量 ``HERMES_EMBEDDING_CACHE_DIR``
+        3. 默认 ``backend/models/``
+        """
+        return _yaml_or_env(
+            "embedding", "cache_dir",
+            env_name="HERMES_EMBEDDING_CACHE_DIR",
+            default=str(_HERE.parents[3] / "models"),
+        )
 
     # ── MemOS 数据目录 ───────────────────────────────────────────────────
 

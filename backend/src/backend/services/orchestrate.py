@@ -404,6 +404,20 @@ def orchestrated_chat_sync_with_sink(
                 f"**助手**: {primary_reply[:2000]}"
             )
             _mos_add(source_aid, _mem_text, session_id=session_id)
+
+        # ── 自动写入本轮对话到知识图谱 ──────────────────────────
+        if _user_input.strip() and primary_reply.strip():
+            from backend.services.knowledge_graph import store_conversation_to_knowledge_graph
+            _kg_result = store_conversation_to_knowledge_graph(
+                source_aid, _user_input, primary_reply,
+            )
+            if _kg_result.get("nodes_added", 0) or _kg_result.get("edges_added", 0):
+                _log.info(
+                    "orchestrate: KG updated for agent=%s: +%d nodes, +%d edges",
+                    source_aid,
+                    _kg_result["nodes_added"],
+                    _kg_result["edges_added"],
+                )
     except Exception:
         pass
 
@@ -426,6 +440,157 @@ def orchestrated_chat_sync_with_sink(
             ))
         except Exception as e:
             _log.debug("orchestrate: emotion arousal boost failed: %s", e)
+
+        # ── [NEW] M3: 心智管线 (10 步) ───────────────────────────────
+        try:
+            import time as _time
+            from backend.services.neural_current import (
+                compute_initial_voltage, compute_prompt_quality, compute_signal_dna,
+                compute_emotion_voltage_modulation, compute_emotion_conductance_bias,
+                compute_emotion_satiety_modifier,
+            )
+            from backend.services.emotion_state_machine import determine_state
+            from backend.services.cooling_buffer import accumulate_heat, check_refractory
+            from backend.services.drive_competition import resolve_drive_competition
+            from backend.services.emotion_epigenetics import (
+                compute_long_term_avg, check_epigenetic_trigger, compute_dna_mutation,
+            )
+            from backend.services.neo4j_service import get_neo4j_service
+            from backend.services.dna_service import compute_complement
+
+            neo4j = get_neo4j_service()
+            if neo4j.is_connected() and _user_input.strip():
+                energy = asyncio.run(energy_svc.get_energy(source_aid))
+                current_pad = asyncio.run(emotion_svc.get_emotion(source_aid))
+                pad_tuple = (current_pad["valence"], current_pad["arousal"], current_pad["dominance"])
+
+                # [M3.1] Vector intuition filter
+                try:
+                    from backend.services.vector_memory import get_vector_perception_service
+                    vector_db = get_vector_perception_service()
+                    intuition = vector_db.intuition_filter(source_aid, _user_input, top_k=5)
+                except Exception:
+                    intuition = None
+
+                # [M3.2] Emotion inertia update
+                v_d, a_d, d_d = emotion_svc.enhanced_analyze_sentiment(_user_input)
+                try:
+                    asyncio.run(emotion_svc.update_with_reservoir(
+                        source_aid, v_d, a_d, d_d, "conversation_turn",
+                    ))
+                except Exception:
+                    pass  # 回退到标准更新
+                is_burst = abs(v_d) > 0.2 or abs(a_d) > 0.2 or abs(d_d) > 0.1
+
+                # [M3.3] Emotion state machine
+                cooling = asyncio.run(emotion_svc.load_cooling_buffer(source_aid))
+                prev_state = "CALM"  # 简化：默认 CALM
+                new_state = determine_state(pad_tuple, cooling.is_refractory, prev_state)
+
+                # [M3.4] Cooling check
+                can_activate_flag = cooling.temperature < 0.75
+
+                # [M3.5] Emotion → voltage modulation
+                prompt_quality = compute_prompt_quality(_user_input)
+                signal = compute_signal_dna(_user_input)
+                base_voltage = compute_initial_voltage(
+                    energy["satiety"], energy["bio_current"], energy["mode"], "medium",
+                )
+                modulated_voltage = compute_emotion_voltage_modulation(
+                    base_voltage, pad_tuple, cooling.is_refractory,
+                )
+
+                # [M3.6] Drive competition
+                drive_result = resolve_drive_competition(
+                    pad_tuple, energy["satiety"], cooling.is_refractory,
+                )
+                if drive_result.override_applied:
+                    final_voltage = modulated_voltage * drive_result.overclock_factor
+                    final_voltage = min(final_voltage, drive_result.ceiling_voltage)
+                else:
+                    final_voltage = modulated_voltage
+
+                if can_activate_flag:
+                    # [M3.7] Current-driven activation
+                    conductance_bias = compute_emotion_conductance_bias(pad_tuple)
+                    result = neo4j.activate_neurons_with_current(
+                        source_aid, signal,
+                        satiety=energy["satiety"],
+                        bio_current=energy["bio_current"],
+                        mode=energy["mode"],
+                        task_complexity="medium",
+                        prompt_quality=prompt_quality,
+                        modulated_voltage=final_voltage,
+                        conductance_bias=conductance_bias,
+                    )
+
+                    # Hebbian learning
+                    for edge in result.get("traversed_edges", []):
+                        neo4j.strengthen_edge(
+                            source_aid, edge.get("source", ""), edge.get("target", ""),
+                            delta=0.01, voltage=edge.get("voltage", 0.0),
+                        )
+
+                    # DNA mutation check
+                    for neuron in result.get("activated_neurons", []):
+                        mutated = neo4j.check_mutation(source_aid, neuron["label"])
+                        if mutated:
+                            mut_left = mutated["left"]
+                            from backend.services.dna_service import compute_mutation_probability
+                            prob = compute_mutation_probability(mutated["potential"])
+                            neo4j.apply_mutation(source_aid, neuron["label"],
+                                                 mut_left, compute_complement(mut_left))
+                            neo4j.prune_neuron_connections(source_aid, neuron["label"])
+                            neo4j.form_new_synapses(source_aid, neuron["label"])
+
+                    # [M3.8] Cooling buffer accumulation
+                    cooling = asyncio.run(emotion_svc.load_cooling_buffer(source_aid))
+                    new_temp = accumulate_heat(cooling.temperature, result.get("joule_heat", 0.1), is_burst)
+                    cooling.temperature = min(new_temp, 1.0)
+                    is_refr, _ = check_refractory(cooling.temperature, cooling.is_refractory)
+                    cooling.is_refractory = is_refr
+                    asyncio.run(emotion_svc.save_cooling_buffer(source_aid, cooling))
+
+                    # [M3.9] Emotional epigenetics
+                    try:
+                        from backend.db.connection import get_connection
+                        conn = get_connection()
+                        session_records = []
+                        try:
+                            rows = conn.execute(
+                                "SELECT v_avg, a_avg, d_avg FROM agent_emotion_session_log "
+                                "WHERE agent_id = ? ORDER BY recorded_at DESC LIMIT 50",
+                                (source_aid,),
+                            ).fetchall()
+                            session_records = [(row[0], row[1], row[2]) for row in reversed(rows)]
+                        finally:
+                            conn.close()
+
+                        if len(session_records) >= 10:
+                            lt_avg = compute_long_term_avg(session_records)
+                            imprint = check_epigenetic_trigger(lt_avg, len(session_records))
+                            if imprint and imprint.is_triggered:
+                                for neuron in result.get("activated_neurons", [])[:3]:
+                                    dna = neo4j.get_neuron_dna(source_aid, neuron["label"])
+                                    if dna and dna.get("left"):
+                                        new_left, pos, ratio = compute_dna_mutation(imprint, dna["left"])
+                                        neo4j.apply_mutation(
+                                            source_aid, neuron["label"],
+                                            new_left, compute_complement(new_left),
+                                        )
+                    except Exception:
+                        pass
+
+                # [M3.10] Energy-emotion coupling
+                try:
+                    modifier = compute_emotion_satiety_modifier(pad_tuple, energy["satiety"])
+                    if hasattr(energy_svc, 'set_consumption_multiplier'):
+                        energy_svc.set_consumption_multiplier(source_aid, modifier)
+                except Exception:
+                    pass
+
+        except Exception:
+            pass  # M3 管线非致命降级
 
     delegations: list[dict[str, Any]] = []
     if auto_peer and len(agents) > 1:

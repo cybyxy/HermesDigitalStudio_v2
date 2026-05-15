@@ -27,6 +27,7 @@ import { DockPanel, type DockPanelContent } from './DockPanel';
 import { AgentList } from './AgentList';
 import { TaskList } from './TaskList';
 import { ChatPanel } from './ChatPanel';
+import { AgentStatusPanel } from './AgentStatusPanel';
 import { ChannelList } from './ChannelList';
 import { ChannelEditForm, type ChannelFormData } from './ChannelEditForm';
 import { AgentEditForm, type AgentFormData } from './AgentEditForm';
@@ -525,6 +526,22 @@ export function AppShell() {
           pointerEvents: 'none',
         }}
       />
+
+      {/* Agent 状态浮动窗体 — 浮在场景上层，紧贴会话右侧面板 */}
+      {(() => {
+        const session = activeId ? sessions.find((s) => s.id === activeId) : null;
+        return session?.agentId ? (
+          <div style={{
+            position: 'absolute',
+            right: rightCollapsed ? 0 : RIGHT_PANEL_W,
+            top: 10,
+            zIndex: 15,
+            pointerEvents: 'auto',
+          }}>
+            <AgentStatusPanel agentId={session.agentId} />
+          </div>
+        ) : null;
+      })()}
 
       {/* Bottom bar: full width at bottom */}
       <BottomBar />

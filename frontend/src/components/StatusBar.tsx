@@ -9,7 +9,6 @@ import { useAgentStore } from '../stores/agentStore';
 import { useAppStore } from '../stores/appStore';
 import { useVoiceRecognition } from '../hooks/useVoiceRecognition';
 import { apiPostOrchestratedRun, apiPostSession, apiPostInterrupt } from '../api/chat';
-import { EnergyBar } from './EnergyBar';
 import { EmotionIndicator } from './EmotionIndicator';
 import type { Attachment } from '../types';
 
@@ -767,7 +766,6 @@ export function StatusBar({ onSend, onUploadImage, onUploadFile, pendingAttachme
       )}
     </div>
       <EmotionIndicator agentId={selectedAgentId} />
-      <EnergyBar agentId={selectedAgentId} />
     </>
   );
 }

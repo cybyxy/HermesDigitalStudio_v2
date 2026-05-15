@@ -203,6 +203,7 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
     _ensure_agent_sessions_schema(conn)
     _ensure_energy_tables(conn)
     _ensure_emotion_tables(conn)
+    _ensure_mind_tables(conn)
 
     # 记忆评分元数据表（由 MemoryScoringDAO 维护）
     from backend.db.memory_scoring import MemoryScoringDAO
@@ -557,6 +558,72 @@ def _ensure_emotion_tables(conn: sqlite3.Connection) -> None:
     conn.execute("""
         CREATE INDEX IF NOT EXISTS idx_emotion_log_agent
         ON agent_emotion_log(agent_id, timestamp DESC)
+    """)
+    conn.commit()
+
+
+def _ensure_mind_tables(conn: sqlite3.Connection) -> None:
+    """创建心智架构表（冷却缓冲区 / 情绪蓄水池 / 表观遗传 / 会话日志）。"""
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS agent_cooling_buffer (
+            agent_id        TEXT PRIMARY KEY,
+            temperature     REAL NOT NULL DEFAULT 0.0,
+            is_refractory   INTEGER NOT NULL DEFAULT 0,
+            peak_temp       REAL NOT NULL DEFAULT 0.0,
+            last_activation REAL NOT NULL DEFAULT 0.0,
+            state           TEXT NOT NULL DEFAULT 'cooling',
+            updated_at      TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (agent_id) REFERENCES agent_avatars(agent_id) ON DELETE CASCADE
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS agent_emotion_inertia (
+            agent_id       TEXT PRIMARY KEY,
+            v_current      REAL NOT NULL DEFAULT 0.0,
+            v_buffer       REAL NOT NULL DEFAULT 0.0,
+            v_baseline     REAL NOT NULL DEFAULT 0.0,
+            a_current      REAL NOT NULL DEFAULT 0.0,
+            a_buffer       REAL NOT NULL DEFAULT 0.0,
+            a_baseline     REAL NOT NULL DEFAULT 0.0,
+            d_current      REAL NOT NULL DEFAULT 0.0,
+            d_buffer       REAL NOT NULL DEFAULT 0.0,
+            d_baseline     REAL NOT NULL DEFAULT 0.0,
+            burst_count    INTEGER NOT NULL DEFAULT 0,
+            last_burst_at  REAL,
+            updated_at     TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (agent_id) REFERENCES agent_avatars(agent_id) ON DELETE CASCADE
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS agent_epigenetic_imprint (
+            agent_id          TEXT PRIMARY KEY,
+            v_long_term_avg   REAL NOT NULL DEFAULT 0.0,
+            a_long_term_avg   REAL NOT NULL DEFAULT 0.0,
+            d_long_term_avg   REAL NOT NULL DEFAULT 0.0,
+            imprint_intensity REAL NOT NULL DEFAULT 0.0,
+            session_count     INTEGER NOT NULL DEFAULT 0,
+            dna_positions     TEXT,
+            last_mutation_at  REAL,
+            mutation_count    INTEGER NOT NULL DEFAULT 0,
+            updated_at        TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (agent_id) REFERENCES agent_avatars(agent_id) ON DELETE CASCADE
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS agent_emotion_session_log (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            agent_id    TEXT NOT NULL,
+            v_avg       REAL NOT NULL,
+            a_avg       REAL NOT NULL,
+            d_avg       REAL NOT NULL,
+            session_key TEXT NOT NULL,
+            recorded_at REAL NOT NULL,
+            FOREIGN KEY (agent_id) REFERENCES agent_avatars(agent_id) ON DELETE CASCADE
+        )
+    """)
+    conn.execute("""
+        CREATE INDEX IF NOT EXISTS idx_session_log_agent
+        ON agent_emotion_session_log(agent_id, recorded_at DESC)
     """)
     conn.commit()
 

@@ -17,6 +17,7 @@ from backend.api.platform_gateway import router as platform_gateway_router
 from backend.api.stt import router as stt_router
 from backend.api.media import router as media_router
 from backend.api.memory import router as memory_router
+from backend.api.mind import router as mind_router
 
 __all__ = [
     "health_router",
@@ -33,4 +34,5 @@ __all__ = [
     "stt_router",
     "media_router",
     "memory_router",
+    "mind_router",
 ]

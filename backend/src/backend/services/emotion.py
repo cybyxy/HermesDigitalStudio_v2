@@ -290,7 +290,311 @@ class EmotionEngine:
 
         await self.update_emotion(agent_id, v_delta, a_delta, d_delta, "time_decay")
 
+    @staticmethod
+    def enhanced_analyze_sentiment(text: str) -> tuple[float, float, float]:
+        """三通道增强情感分析。
+
+        Returns:
+            (valence_delta, arousal_delta, dominance_delta)
+            - praise keywords → (v+0.1, a+0.05, d+0.03)
+            - criticism keywords → (v-0.1, a+0.08, d-0.05)
+            - exclamation/rhetorical questions → arousal +0.05
+            - long/complex sentences → dominance -0.02
+            - default → (0, 0, 0)
+        """
+        if not text:
+            return (0.0, 0.0, 0.0)
+
+        v_delta = 0.0
+        a_delta = 0.0
+        d_delta = 0.0
+
+        t = text.lower()
+
+        # 正面关键词
+        praise_found = False
+        for kw in PRAISE_KEYWORDS_ZH:
+            if kw in text:
+                praise_found = True
+                break
+        if not praise_found:
+            for kw in PRAISE_KEYWORDS_EN:
+                if kw in t:
+                    praise_found = True
+                    break
+        if praise_found:
+            v_delta = 0.1
+            a_delta = 0.05
+            d_delta = 0.03
+
+        # 负面关键词
+        criticism_found = False
+        for kw in CRITICISM_KEYWORDS_ZH:
+            if kw in text:
+                criticism_found = True
+                break
+        if not criticism_found:
+            for kw in CRITICISM_KEYWORDS_EN:
+                if kw in t:
+                    criticism_found = True
+                    break
+        if criticism_found:
+            v_delta = -0.1
+            a_delta = 0.08
+            d_delta = -0.05
+
+        # 标点提示
+        if "?" in text or "？" in text or "!" in text or "！" in text:
+            a_delta += 0.05
+
+        # 长文本不确定性
+        if len(text) > 100:
+            d_delta -= 0.02
+
+        return (v_delta, a_delta, d_delta)
+
+    # ── 情绪蓄水池集成 ────────────────────────────────────────────────────
+
+    async def update_with_reservoir(
+        self,
+        agent_id: str,
+        valence_delta: float = 0.0,
+        arousal_delta: float = 0.0,
+        dominance_delta: float = 0.0,
+        trigger: str = "",
+    ) -> dict:
+        """使用情绪蓄水池（指数平滑+缓冲区）更新情绪。
+
+        替代原始的直接 delta 叠加。
+        """
+        current = await self.get_emotion(agent_id)
+
+        try:
+            from backend.services.emotion_reservoir import (
+                EmotionReservoirState,
+                smooth_update,
+                accumulate_buffer,
+            )
+
+            # 加载或初始化蓄水池状态
+            inertia = await self._load_inertia_state(agent_id)
+
+            # 对每维应用蓄水池更新
+            for dim, delta in [("v", valence_delta), ("a", arousal_delta), ("d", dominance_delta)]:
+                current_val = getattr(inertia, f"{dim}_current")
+                buff = getattr(inertia, f"{dim}_buffer")
+
+                # 指数平滑更新当前值
+                target = current_val + delta
+                new_current = smooth_update(current_val, target)
+                setattr(inertia, f"{dim}_current", new_current)
+
+                # 缓冲区累积
+                new_buff, burst, _released = accumulate_buffer(buff, delta)
+                setattr(inertia, f"{dim}_buffer", new_buff)
+
+                if burst:
+                    inertia.burst_count += 1
+
+            # 保存蓄水池状态
+            await self._save_inertia_state(agent_id, inertia)
+
+            # 同时更新 core PAD 值（clamped）
+            new_v = max(VALENCE_MIN, min(VALENCE_MAX, inertia.v_current))
+            new_a = max(AROUSAL_MIN, min(AROUSAL_MAX, inertia.a_current))
+            new_d = max(DOMINANCE_MIN, min(DOMINANCE_MAX, inertia.d_current))
+
+            from backend.db.connection import get_connection
+            conn = get_connection()
+            try:
+                conn.execute(
+                    "INSERT OR REPLACE INTO agent_emotion "
+                    "(agent_id, valence, arousal, dominance, updated_at) "
+                    "VALUES (?, ?, ?, ?, datetime('now'))",
+                    (agent_id, new_v, new_a, new_d),
+                )
+                conn.execute(
+                    "INSERT INTO agent_emotion_log "
+                    "(agent_id, valence, arousal, dominance, trigger) "
+                    "VALUES (?, ?, ?, ?, ?)",
+                    (agent_id, new_v, new_a, new_d, trigger),
+                )
+                conn.commit()
+            finally:
+                conn.close()
+
+            return await self.get_emotion(agent_id)
+
+        except ImportError:
+            # 无蓄水池模块时回退到原始更新
+            return await self.update_emotion(
+                agent_id, valence_delta, arousal_delta, dominance_delta, trigger
+            )
+
+    # ── 状态机集成 ────────────────────────────────────────────────────────
+
+    async def get_emotion_with_states(self, agent_id: str) -> dict:
+        """获取完整心理快照 (PAD + 蓄水池 + 状态机 + 冷却缓冲区)。"""
+        pad = await self.get_emotion(agent_id)
+
+        result = {
+            "agent_id": agent_id,
+            "valence": pad["valence"],
+            "arousal": pad["arousal"],
+            "dominance": pad["dominance"],
+            "state_machine": "CALM",
+            "is_refractory": False,
+            "cooling_temperature": 0.0,
+        }
+
+        try:
+            # 蓄水池状态
+            inertia = await self._load_inertia_state(agent_id)
+            result["reservoir_v"] = inertia.v_current
+            result["reservoir_a"] = inertia.a_current
+            result["reservoir_d"] = inertia.d_current
+            result["burst_count"] = inertia.burst_count
+        except Exception:
+            pass
+
+        try:
+            # 冷却缓冲区
+            cooling = await self._load_cooling_state(agent_id)
+            result["cooling_temperature"] = cooling.temperature
+            result["is_refractory"] = cooling.is_refractory
+        except Exception:
+            pass
+
+        try:
+            # 情绪状态机
+            from backend.services.emotion_state_machine import determine_state
+            prev_state = result.get("state_machine", "CALM")
+            new_state = determine_state(
+                (pad["valence"], pad["arousal"], pad["dominance"]),
+                result["is_refractory"],
+                prev_state,
+            )
+            result["state_machine"] = new_state
+        except Exception:
+            pass
+
+        return result
+
+    # ── 冷却缓冲区持久化 ──────────────────────────────────────────────────
+
+    async def load_cooling_buffer(self, agent_id: str):
+        """加载冷却缓冲区状态。"""
+        try:
+            from backend.db.connection import get_connection
+            from backend.services.cooling_buffer import CoolingBufferState
+
+            conn = get_connection()
+            try:
+                row = conn.execute(
+                    "SELECT temperature, is_refractory, peak_temp "
+                    "FROM agent_cooling_buffer WHERE agent_id = ?",
+                    (agent_id,),
+                ).fetchone()
+                if row:
+                    return CoolingBufferState(
+                        temperature=float(row[0]),
+                        is_refractory=bool(row[1]),
+                        peak_temperature=float(row[2]),
+                    )
+                return CoolingBufferState()
+            finally:
+                conn.close()
+        except Exception:
+            from backend.services.cooling_buffer import CoolingBufferState
+            return CoolingBufferState()
+
+    async def save_cooling_buffer(self, agent_id: str, state) -> None:
+        """保存冷却缓冲区状态。"""
+        try:
+            from backend.db.connection import get_connection
+
+            conn = get_connection()
+            try:
+                conn.execute(
+                    "INSERT OR REPLACE INTO agent_cooling_buffer "
+                    "(agent_id, temperature, is_refractory, peak_temp, updated_at) "
+                    "VALUES (?, ?, ?, ?, datetime('now'))",
+                    (
+                        agent_id,
+                        state.temperature,
+                        1 if state.is_refractory else 0,
+                        state.peak_temperature,
+                    ),
+                )
+                conn.commit()
+            finally:
+                conn.close()
+        except Exception:
+            pass  # 表可能尚未创建
+
+    # ── 蓄水池持久化 ──────────────────────────────────────────────────────
+
+    async def _load_inertia_state(self, agent_id: str):
+        """加载情绪蓄水池状态。"""
+        try:
+            from backend.db.connection import get_connection
+            from backend.services.emotion_reservoir import EmotionReservoirState
+
+            conn = get_connection()
+            try:
+                row = conn.execute(
+                    "SELECT v_current, v_buffer, v_baseline, "
+                    "a_current, a_buffer, a_baseline, "
+                    "d_current, d_buffer, d_baseline, burst_count "
+                    "FROM agent_emotion_inertia WHERE agent_id = ?",
+                    (agent_id,),
+                ).fetchone()
+                if row:
+                    return EmotionReservoirState(
+                        v_current=float(row[0]), v_buffer=float(row[1]), v_baseline=float(row[2]),
+                        a_current=float(row[3]), a_buffer=float(row[4]), a_baseline=float(row[5]),
+                        d_current=float(row[6]), d_buffer=float(row[7]), d_baseline=float(row[8]),
+                        burst_count=int(row[9]),
+                    )
+                return EmotionReservoirState()
+            finally:
+                conn.close()
+        except Exception:
+            from backend.services.emotion_reservoir import EmotionReservoirState
+            return EmotionReservoirState()
+
+    async def _save_inertia_state(self, agent_id: str, state) -> None:
+        """保存情绪蓄水池状态。"""
+        try:
+            from backend.db.connection import get_connection
+
+            conn = get_connection()
+            try:
+                conn.execute(
+                    "INSERT OR REPLACE INTO agent_emotion_inertia "
+                    "(agent_id, v_current, v_buffer, v_baseline, "
+                    "a_current, a_buffer, a_baseline, "
+                    "d_current, d_buffer, d_baseline, burst_count, updated_at) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
+                    (
+                        agent_id,
+                        state.v_current, state.v_buffer, state.v_baseline,
+                        state.a_current, state.a_buffer, state.a_baseline,
+                        state.d_current, state.d_buffer, state.d_baseline,
+                        state.burst_count,
+                    ),
+                )
+                conn.commit()
+            finally:
+                conn.close()
+        except Exception:
+            pass  # 表可能尚未创建
+
     # ── 内部辅助 ──────────────────────────────────────────────────────────
+
+    async def _load_cooling_state(self, agent_id: str):
+        """加载冷却缓冲区状态（内部方法别名）。"""
+        return await self.load_cooling_buffer(agent_id)
 
     @staticmethod
     def _get_all_emotion_agent_ids() -> list[str]:

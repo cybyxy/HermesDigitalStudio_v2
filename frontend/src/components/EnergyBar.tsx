@@ -1,9 +1,9 @@
 /**
  * EnergyBar — 双色能量条组件
  *
- * 显示当前选中 Agent 的饱食度（Satiety）和生物电流（BioCurrent）状态。
+ * 显示当前选中 Agent 的饱食度（Satiety）和神经电源（Neural Power）状态。
  * - 饱食度：绿色 → 黄色 → 红色渐变
- * - 生物电流：蓝色 → 橙色 → 红色渐变
+ * - 神经电源：蓝色 → 橙色 → 红色渐变
  * - 模式标签：normal / power_save / surge / forced_discharge
  */
 
@@ -23,7 +23,7 @@ function satietyColor(value: number): string {
   return '#f44336';
 }
 
-/** 根据值获取生物电流颜色（蓝→橙→红） */
+/** 根据值获取神经电源颜色（蓝→橙→红） */
 function bioCurrentColor(value: number): string {
   if (value <= 3) return '#2196f3';
   if (value <= 6) return '#ff9800';
@@ -109,9 +109,9 @@ export function EnergyBar({ agentId }: EnergyBarProps) {
         <span className="energy-value">{energy.satiety}</span>
       </div>
 
-      {/* 生物电流 */}
+      {/* 神经电流 */}
       <div className="energy-row">
-        <span className="energy-label">生物电流</span>
+        <span className="energy-label">神经电流</span>
         <div className="energy-track">
           <div
             className="energy-fill"

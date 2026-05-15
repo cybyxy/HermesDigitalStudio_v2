@@ -24,6 +24,8 @@ interface AppState {
     content: string;
     timestamp: number;
   } | null;
+  /** VAD 语音活动状态 */
+  voiceActive: boolean;
 
   setInitialized: (init: boolean) => void;
   setWsConnected: (connected: boolean) => void;
@@ -36,6 +38,7 @@ interface AppState {
   clearHeartbeatThinking: () => void;
   setSmallThought: (thought: AppState['smallThought']) => void;
   clearSmallThought: () => void;
+  setVoiceActive: (active: boolean) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -46,6 +49,7 @@ export const useAppStore = create<AppState>((set) => ({
   heartbeatMessage: null,
   heartbeatThinking: '',
   smallThought: null,
+  voiceActive: false,
 
   setInitialized: (init) => set({ initialized: init }),
   setWsConnected: (connected) => set({ wsConnected: connected }),
@@ -60,4 +64,5 @@ export const useAppStore = create<AppState>((set) => ({
   clearHeartbeatThinking: () => set({ heartbeatThinking: '' }),
   setSmallThought: (thought) => set({ smallThought: thought }),
   clearSmallThought: () => set({ smallThought: null }),
+  setVoiceActive: (active) => set({ voiceActive: active }),
 }));

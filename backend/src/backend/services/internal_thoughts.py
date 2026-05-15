@@ -204,11 +204,6 @@ class InternalThoughtsService:
                 if not done.done():
                     done.set_result(True)
 
-            gw.gateway.call("studio.set_routing_hint", {
-                "session_id": sid,
-                "hint": "small_thought_gen",
-            })
-
             gw.gateway.submit_prompt(sid, prompt, attachments=None)
             gw.gateway.on("message.complete", on_complete)
 

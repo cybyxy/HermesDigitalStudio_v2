@@ -329,10 +329,41 @@ def _parse_llm_json(text: str) -> dict:
     return json.loads(text)
 
 
+def store_conversation_to_knowledge_graph(
+    agent_id: str,
+    user_text: str,
+    assistant_reply: str,
+) -> dict:
+    """将单轮对话写入知识图谱。
+
+    自动提取对话中的实体和关系，存入知识图谱分表（SQLite）。
+    复用 ``build_graph_incremental()`` 的 LLM 提取管道。
+    使用 force=True 跳过 debounce，确保每轮都被处理。
+
+    Args:
+        agent_id: Agent ID
+        user_text: 用户输入文本
+        assistant_reply: 助手回复文本
+
+    Returns:
+        ``build_graph_incremental()`` 的结果字典，
+        包含 ``nodes_added``, ``edges_added``, ``nodes_total`` 等字段。
+    """
+    if not user_text.strip() or not assistant_reply.strip():
+        return {"nodes_added": 0, "edges_added": 0}
+
+    memory_entry = {
+        "category": "conversation",
+        "content": f"用户: {user_text[:500]}\n助手: {assistant_reply[:1000]}",
+    }
+    return build_graph_incremental(agent_id, memory_entries=[memory_entry], force=True)
+
+
 # ── 模块导出 ──────────────────────────────────────────────────────────────────
 
 __all__ = [
     "build_graph_incremental",
     "query_knowledge_graph",
     "build_mermaid_graph",
+    "store_conversation_to_knowledge_graph",
 ]

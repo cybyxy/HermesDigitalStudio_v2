@@ -28,17 +28,30 @@ _log = logging.getLogger(__name__)
 # ── HuggingFace 离线/镜像配置 ──────────────────────────────────────────────
 # 若本地已有模型缓存，启用 HF_HUB_OFFLINE 跳过网络校验
 # 否则设置 hf-mirror.com 作为下载源
-def _configure_huggingface_env() -> None:
+def _configure_huggingface_env(model_name: str = "all-MiniLM-L6-v2") -> None:
     if os.environ.get("HF_HUB_OFFLINE"):
         return
+
+    # 从配置读取自定义缓存目录，并设置 HF_HOME 使其对所有 HF 操作生效
+    try:
+        from backend.core.config import get_config
+        cache_dir = get_config().embedding_cache_dir
+        hf_home = str(Path(cache_dir) / "huggingface")
+        Path(hf_home).mkdir(parents=True, exist_ok=True)
+        os.environ.setdefault("HF_HOME", hf_home)
+    except Exception:
+        pass
+
     # 检查关键模型是否已缓存
     try:
         from huggingface_hub import try_to_load_from_cache
+        # 构造完整的 HuggingFace repo ID
+        repo_id = f"sentence-transformers/{model_name}" if "/" not in model_name else model_name
         cached = try_to_load_from_cache(
-            repo_id="sentence-transformers/all-MiniLM-L6-v2",
+            repo_id=repo_id,
             filename="config.json",
         )
-        if cached:
+        if cached and Path(cached).is_file():
             os.environ["HF_HUB_OFFLINE"] = "1"
             return
     except Exception:
@@ -46,6 +59,13 @@ def _configure_huggingface_env() -> None:
     os.environ.setdefault("HF_ENDPOINT", "https://hf-mirror.com")
 
 _configure_huggingface_env()
+
+
+def _get_embedding_config() -> tuple[str, int]:
+    """从配置读取嵌入模型名称和维度。"""
+    from backend.core.config import get_config
+    cfg = get_config()
+    return cfg.embedding_model, cfg.embedding_dimensions
 
 
 def prewarm_embedding_model() -> None:
@@ -56,23 +76,26 @@ def prewarm_embedding_model() -> None:
     """
     try:
         from sentence_transformers import SentenceTransformer
+        from backend.core.config import get_config
+
+        model_name, _ = _get_embedding_config()
+        full_name = f"sentence-transformers/{model_name}" if "/" not in model_name else model_name
+        cache_dir = get_config().embedding_cache_dir
 
         model = None
         # 1. 首先尝试纯离线加载（本地已缓存时立即返回，不联网）
         try:
-            model = SentenceTransformer(
-                "sentence-transformers/all-MiniLM-L6-v2",
-                local_files_only=True,
-            )
+            model = SentenceTransformer(full_name, local_files_only=True, cache_folder=cache_dir)
         except Exception:
-            _log.info("mem_os_service: model not cached, downloading...")
+            _log.info("mem_os_service: model %s not cached, downloading...", model_name)
             # 2. 未缓存时回退到联网下载（使用 HF 镜像）
-            model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+            model = SentenceTransformer(full_name, cache_folder=cache_dir)
 
         if model:
             _log.info(
-                "mem_os_service: embedding model prewarmed, dim=%d",
-                model.get_sentence_embedding_dimension(),
+                "mem_os_service: embedding model prewarmed, model=%s dim=%d",
+                model_name,
+                model.get_embedding_dimension(),
             )
     except Exception as e:
         _log.warning("mem_os_service: embedding model prewarm failed (non-fatal): %s", e)
@@ -82,10 +105,6 @@ def prewarm_embedding_model() -> None:
 _mos_cache: dict[str, Any] = {}
 _cache_lock = threading.Lock()
 _memos_dir_cached: str | None = None  # 缓存 MEMOS_DIR，避免重复导入
-
-# ── 嵌入模型配置（sentence_transformer 本地模型，无需外部 API）───────────────
-_DEFAULT_EMBEDDING_MODEL = "all-MiniLM-L6-v2"   # 384-dimensional, ~80MB
-_DEFAULT_EMBEDDING_DIMS = 384
 
 
 # ═══════════════════════════════════════════════════════════════════════════════════
@@ -335,9 +354,10 @@ def _resolve_qdrant_config(agent_id: str) -> dict:
     3. 回退到本地文件模式 ``path``
     """
     safe_id = agent_id.replace("/", "_").replace(":", "_")
+    _, embed_dims = _get_embedding_config()
     _build = lambda **kw: {**kw, "collection_name": f"{safe_id}_memory",
                            "distance_metric": "cosine",
-                           "vector_dimension": _DEFAULT_EMBEDDING_DIMS}
+                           "vector_dimension": embed_dims}
 
     # 1. 从 Studio 自有配置文件读取（优先级最高）
     try:
@@ -403,7 +423,7 @@ def _build_mos_config(agent_id: str) -> Any:
     embedder_config = {
         "backend": "sentence_transformer",
         "config": {
-            "model_name_or_path": _DEFAULT_EMBEDDING_MODEL,
+            "model_name_or_path": embed_model,
             "trust_remote_code": True,
         },
     }
@@ -454,6 +474,7 @@ def _build_cube_config(agent_id: str, config: Any) -> Any:
     """
     creds = _resolve_llm_credentials(agent_id)
     safe_id = agent_id.replace("/", "_").replace(":", "_")
+    embed_model, _ = _get_embedding_config()
 
     from memos.configs.mem_cube import GeneralMemCubeConfig
 
@@ -469,7 +490,7 @@ def _build_cube_config(agent_id: str, config: Any) -> Any:
     embedder_config = {
         "backend": "sentence_transformer",
         "config": {
-            "model_name_or_path": _DEFAULT_EMBEDDING_MODEL,
+            "model_name_or_path": embed_model,
             "trust_remote_code": True,
         },
     }

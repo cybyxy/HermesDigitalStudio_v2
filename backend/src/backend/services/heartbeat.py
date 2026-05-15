@@ -57,6 +57,7 @@ class HeartbeatService:
         self._last_reasoned: dict[str, float] = {}  # agent_id → 上次推理时间
         self._last_heartbeat: dict[str, float] = {}  # agent_id → 上次心跳时间（用于能量联动间隔）
         self._recent_node_sets: dict[str, list[frozenset[str]]] = {}  # agent_id → 最近 10 个游走节点集合
+        self._health_check_counter: dict[str, int] = {}  # agent_id → 心跳计数（用于周期性心智层健康自检）
 
     async def start(self):
         """启动心跳循环。"""
@@ -258,7 +259,7 @@ class HeartbeatService:
                             "timestamp": time.time(),
                         })
                     except Exception:
-                        pass
+                        _log.debug("heartbeat: failed to publish skipped event for agent=%s", agent_id, exc_info=True)
                     return  # 跳过 LLM 推理
                 # 记录本次游走节点集合（保留最近 10 个）
                 history = self._recent_node_sets.get(agent_id, [])
@@ -289,6 +290,84 @@ class HeartbeatService:
 
         # 5. 推送到飞书（如果网关运行中）
         await self._push_to_feishu(agent_id, content)
+
+        # ── [NEW] 空间感知 + 空闲行为生成 ──────────────────────────
+        try:
+            # 检查空闲时长
+            last_act = await self._get_last_user_activity()
+            idle_seconds = time.time() - last_act
+            if idle_seconds > 30 and get_config().heartbeat_spatial_enabled:
+                from backend.services.neo4j_service import get_neo4j_service
+                neo4j = get_neo4j_service()
+                if neo4j.is_connected():
+                    # 获取 agent 位置（简化：默认坐标）
+                    agent_x = 200.0
+                    agent_y = 150.0
+                    items = neo4j.get_items_near_agent(agent_id, agent_x, agent_y, threshold=150)
+                    if items:
+                        from backend.services.spatial_perception import (
+                            compute_environment_perception, compute_environment_mood_deltas,
+                        )
+                        perception = compute_environment_perception(agent_x, agent_y, [
+                            type("Item", (), {
+                                "x": it.get("x", 0), "y": it.get("y", 0),
+                                "name": it.get("name", ""), "description": it.get("description", ""),
+                            })() for it in items
+                        ])
+
+                        # 环境 → 情绪闭环
+                        from backend.services.emotion import get_emotion_service
+                        emo_svc = get_emotion_service()
+                        v_d, a_d, d_d = compute_environment_mood_deltas(
+                            [(type("Item", (), {"x": it.get("x", 0), "y": it.get("y", 0),
+                               "name": it.get("name", ""), "mood_tags": (
+                                   __import__("json").loads(it.get("mood_tags", "[]"))
+                                   if isinstance(it.get("mood_tags"), str) else it.get("mood_tags", [])
+                               )})(), it.get("distance", 100)) for it in items
+                        ])
+                        await emo_svc.update_emotion(agent_id, v_d, a_d, d_d, "environment_idle")
+
+                        # 选择焦点
+                        from backend.services.environment_behavior import select_environment_focus
+                        focus = select_environment_focus([
+                            ({
+                                "name": it.get("name", ""),
+                                "description": it.get("description", ""),
+                                "mood_tags": (
+                                    __import__("json").loads(it.get("mood_tags", "[]"))
+                                    if isinstance(it.get("mood_tags"), str) else it.get("mood_tags", [])
+                                ),
+                            }, it.get("distance", 100)) for it in items
+                        ])
+
+                        if focus and focus.get("name"):
+                            content_text = f"[环顾四周] 注意到了「{focus['name']}」。{focus.get('description', '')}"
+                            await self._push_to_frontend(agent_id, content_text)
+                            _log.info("heartbeat: agent=%s spatial idle: %s", agent_id, content_text[:60])
+        except Exception as e:
+            _log.debug("heartbeat: spatial idle failed for agent=%s: %s", agent_id, e)
+
+        # ── [NEW] 心智层健康自检（每 10 个心跳周期执行一次）────────────────
+        try:
+            hc = self._health_check_counter.get(agent_id, 0) + 1
+            self._health_check_counter[agent_id] = hc
+            if hc % 10 == 0:
+                from backend.services.emotion import get_emotion_service
+                emotion_svc = get_emotion_service()
+                try:
+                    state = emotion_svc.get_emotion_with_states(agent_id)
+                    # 检测关键异常：冷却温度异常过高、情绪状态异常
+                    cooling = state.get("cooling", {})
+                    if cooling.get("temperature", 0) > 1.0:
+                        _log.warning("mind_health: agent=%s cooling temperature abnormal: %.2f", agent_id, cooling["temperature"])
+                    if cooling.get("temperature", 0) < -0.1:
+                        _log.warning("mind_health: agent=%s cooling temperature negative: %.2f", agent_id, cooling["temperature"])
+                    _log.debug("mind_health: agent=%s check ok, state=%s temp=%.2f",
+                               agent_id, state.get("state", "?"), cooling.get("temperature", 0))
+                except Exception:
+                    _log.warning("mind_health: failed to read state for agent=%s", agent_id, exc_info=True)
+        except Exception:
+            pass  # 自检不阻断主循环
 
     # ── LLM 推理 ────────────────────────────────────────────────────────
 
@@ -436,7 +515,7 @@ class HeartbeatService:
             try:
                 gw.close_session(temp_sid)
             except Exception:
-                pass
+                _log.debug("heartbeat: failed to close temp session %s for agent=%s", temp_sid, agent_id, exc_info=True)
 
     def _format_nodes(self, nodes: list[dict], agent_id: str) -> str:
         """将节点列表格式化为 LLM prompt 可用文本。"""

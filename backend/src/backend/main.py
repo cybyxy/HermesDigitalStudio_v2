@@ -37,6 +37,7 @@ from backend.api import (
     stt_router,
     media_router,
     memory_router,
+    mind_router,
 )
 from backend.db.connection import close_thread_connection
 from backend.middleware.api_response import register_api_response_middleware
@@ -292,6 +293,7 @@ def create_app() -> FastAPI:
     app.include_router(stt_router, prefix="/api")
     app.include_router(media_router, prefix="/api")
     app.include_router(memory_router, prefix="/api")
+    app.include_router(mind_router, prefix="/api")
 
     # 静态素材：与 Vite public/assets 一致
     _repo_root = Path(__file__).resolve().parents[3]

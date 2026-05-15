@@ -1,0 +1,86 @@
+/**
+ * AgentStatusPanel 样式 — 独立浮动窗体
+ */
+
+.agent-status-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  min-width: 140px;
+  background: rgba(10, 12, 18, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  font-size: 10px;
+  color: rgba(200, 204, 212, 0.9);
+  user-select: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* ── 单一项（标签 + 进度条） ────────────── */
+
+.asp-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.asp-label {
+  width: 40px;
+  flex-shrink: 0;
+  text-align: right;
+  font-size: 10px;
+  color: rgba(180, 190, 210, 0.65);
+}
+
+.asp-track {
+  flex: 1;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.asp-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease, background-color 0.5s ease;
+}
+
+/* ── 综合情绪指示器 ──────────────────────── */
+
+.asp-mood {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding-top: 4px;
+  margin-top: 2px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.asp-mood-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px currentColor;
+}
+
+.asp-mood-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: rgba(200, 204, 212, 0.85);
+}
+
+/* ── 加载中 ────────────────────────────────── */
+
+.asp-loading {
+  text-align: center;
+  font-size: 14px;
+  color: rgba(180, 190, 210, 0.5);
+  padding: 4px 0;
+}

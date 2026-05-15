@@ -44,12 +44,54 @@ heartbeat:
   #   satiety_60_80: 30
   #   satiety_gt_80: 15
   # prefilter_enabled: true # 是否启用心跳预判过滤器
+  # spatial_enabled: true   # 是否启用空间感知空闲行为
+
+# ── 心智架构 (Mind Architecture) ──────────────────────────────────────
+mind:
+  # DNA 引擎
+  dna:
+    # default_length: 128         # 默认 DNA 长度
+    # promoter_weight: 0.40       # Promoter 区权重
+    # exon_weight: 0.45           # Exon 区权重
+    # max_mutation_ratio: 0.15    # 最大变异比例
+    # potential_per_interaction: 0.0001  # 每次交互累积潜力
+
+  # 神经电流
+  neural:
+    # min_voltage: 0.1            # 最低传导电压
+    # hop_resistance: 1.0         # 跳数阻力系数
+    # hedonic_threshold_quality: 0.8  # 享乐覆盖-质量阈值
+    # hedonic_threshold_satiety: 85   # 享乐覆盖-饱食度阈值
+
+  # 情绪蓄水池
+  emotion:
+    # inertia_rate: 0.15          # 指数平滑率
+    # burst_threshold: 0.30       # 缓冲区爆发阈值
+    # homeostasis_rate: 0.01      # 稳态回归率
+
+  # 冷却缓冲区
+  cooling:
+    # refractory_threshold: 0.75  # 进入不应期温度阈值
+    # refractory_exit: 0.30       # 退出不应期温度阈值
+    # natural_cooling_rate: 0.05  # 每分钟降温系数
+
+  # 驱力竞争
+  drive:
+    # max_overclock: 1.35         # 最大超频系数
+
+  # 表观遗传
+  epigenetics:
+    # session_window: 50          # 长程滑动窗口
+    # trigger_threshold: 0.60     # 触发强度阈值
+    # min_sessions: 10            # 最少会话数
+    # max_mutation: 0.08          # 单次最大变异
+
 
 # ── Qdrant 向量数据库 ──────────────────────────────────────────────────
 # 不配置此段则使用本地文件模式（数据存储在 .memos/qdrant/）
-# qdrant:
-#   url: http://localhost:6333      # Qdrant Cloud / Docker 模式
-#   # api_key: your-key             # Qdrant Cloud 需要
+qdrant:
+  url: http://localhost:6333
+  api_key: "123456"
 #
 # qdrant:
 #   host: 192.168.1.100             # 自托管模式
@@ -61,6 +103,13 @@ heartbeat:
 # ── MemOS 数据目录 ─────────────────────────────────────────────────────
 memos:
   # dir: ""                 # 覆盖 MemOS 数据根目录（留空则自动检测 .memos/）
+
+# ── Embedding 嵌入模型 ─────────────────────────────────────────────────
+# sentence-transformer 本地嵌入模型（用于向量化记忆文本）
+# embedding:
+#   model: "all-MiniLM-L6-v2"        # HuggingFace 模型名或本地路径（环境变量 HERMES_EMBEDDING_MODEL）
+#   dimensions: 384                   # 向量维度（环境变量 HERMES_EMBEDDING_DIMENSIONS）
+#   cache_dir: ""                     # 模型缓存目录，默认 backend/models/（环境变量 HERMES_EMBEDDING_CACHE_DIR）
 
 # ── 模型适配器（Gemini / Ollama）───────────────────────────────────────
 providers:

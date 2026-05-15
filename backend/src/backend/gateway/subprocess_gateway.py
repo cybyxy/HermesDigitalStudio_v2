@@ -139,7 +139,7 @@ class SubprocessGateway:
             from backend.services.mem_os_service import _get_memos_dir
             env["HERMES_STUDIO_MEMOS_DIR"] = _get_memos_dir()
         except Exception:
-            pass
+            _log.warning("[%s] failed to resolve MEMOS directory", self.session_id, exc_info=True)
 
         if self.model:
             env["HERMES_MODEL"] = self.model
@@ -204,9 +204,7 @@ class SubprocessGateway:
                     continue
                 self._dispatch_inbound(obj)
         except Exception:
-            pass
-        finally:
-            self._stdout_queue.put(None)
+            _log.warning("[%s] stdout drain failed", self.session_id, exc_info=True)
 
     def _drain_stderr(self) -> None:
         """后台线程：持续读取子进程 stderr 并写入日志。"""
@@ -219,9 +217,7 @@ class SubprocessGateway:
                 if line:
                     _log.debug("[%s] %s", self.session_id, line)
         except Exception:
-            pass
-
-    # ── 事件分发 ────────────────────────────────────────────────────────
+            _log.warning("[%s] stderr drain failed", self.session_id, exc_info=True)
 
     def _dispatch_inbound(self, obj: dict) -> None:
         """Handle inbound JSON-RPC from subprocess.
@@ -252,7 +248,7 @@ class SubprocessGateway:
                 try:
                     handler(event_dict)
                 except Exception:
-                    pass
+                    _log.warning("[%s] event handler failed for event=%s", self.session_id, event_dict.get("event", "?"), exc_info=True)
             return
 
         rid = obj.get("id")
@@ -288,7 +284,7 @@ class SubprocessGateway:
                 try:
                     proc.kill()
                 except Exception:
-                    pass
+                    _log.warning("[%s] failed to kill subprocess after terminate+wait", self.session_id, exc_info=True)
             self._proc = None
 
     def is_alive(self) -> bool:
@@ -323,7 +319,7 @@ class SubprocessGateway:
             try:
                 handler(event_dict)
             except Exception:
-                pass
+                _log.warning("[%s] synthetic event handler failed for event=%s", self.session_id, event_dict.get("event", "?"), exc_info=True)
 
     def call(self, method: str, params: dict | None = None, timeout: float = _SUBPROCESS_TIMEOUT_S) -> dict | None:
         """向子进程发送 JSON-RPC 请求并等待响应，线程安全。"""
