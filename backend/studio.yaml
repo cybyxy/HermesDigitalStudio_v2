@@ -1,0 +1,110 @@
+# HermesDigitalStudio 后端配置
+#
+# 此文件位于 backend/studio.yaml，由 Studio 启动时自动读取。
+# 所有 Studio 专属配置集中于此，不要修改 ~/.hermes/config.yaml（那是 Hermes 子进程的配置）。
+#
+# 配置优先级：studio.yaml > 环境变量 > 代码默认值
+#
+# =============================================================================
+# 使用说明：
+#   - 取消注释并修改你需要的配置项
+#   - 未配置的项将使用代码默认值
+#   - API Key 等敏感信息建议仍使用环境变量（不回显到日志）
+# =============================================================================
+
+# ── 服务端口 ──────────────────────────────────────────────────────────
+server:
+  # port: 9120              # 后端监听端口（环境变量 PORT / STUDIO_BACKEND_PORT 亦可覆盖）
+  # data_dir: ""            # SQLite 数据目录（留空则自动检测 backend/data/）
+
+# ── 消息网关子进程 ──────────────────────────────────────────────────────
+gateway:
+  # ingest_url: ""          # Gateway 事件回推 URL 覆盖
+  # python: ""              # 自定义 Python 解释器路径（默认自动选择 backend/.venv）
+  # no_embedded: false      # 是否禁用嵌入式消息网关（true 时需手动运行 hermes gateway）
+
+# ── Neo4j 图数据库 ─────────────────────────────────────────────────────
+neo4j:
+  # uri: "bolt://localhost:7687"
+  # user: "neo4j"
+  # password: "bobo1234"
+
+# ── 心跳推理循环 ──────────────────────────────────────────────────────
+heartbeat:
+  # enabled: true           # 是否启用心跳推理
+  # interval: 5             # 心跳间隔（秒）
+  # idle_timeout: 50        # 用户空闲多久（秒）后恢复心跳
+  # model: ""               # 心跳推理专用轻量模型名（留空则复用主模型）
+  # provider: ""            # 心跳推理 provider slug
+  # api_key: ""             # 心跳推理 API Key（建议用环境变量 HERMES_HEARTBEAT_API_KEY）
+  # base_url: ""            # 心跳推理 Base URL
+  # level_intervals:        # 饱食度 → 心跳间隔映射
+  #   satiety_lt_30: 90
+  #   satiety_30_60: 60
+  #   satiety_60_80: 30
+  #   satiety_gt_80: 15
+  # prefilter_enabled: true # 是否启用心跳预判过滤器
+
+# ── Qdrant 向量数据库 ──────────────────────────────────────────────────
+# 不配置此段则使用本地文件模式（数据存储在 .memos/qdrant/）
+# qdrant:
+#   url: http://localhost:6333      # Qdrant Cloud / Docker 模式
+#   # api_key: your-key             # Qdrant Cloud 需要
+#
+# qdrant:
+#   host: 192.168.1.100             # 自托管模式
+#   port: 6333
+#
+# qdrant:
+#   path: /data/qdrant              # 自定义本地文件路径
+
+# ── MemOS 数据目录 ─────────────────────────────────────────────────────
+memos:
+  # dir: ""                 # 覆盖 MemOS 数据根目录（留空则自动检测 .memos/）
+
+# ── 模型适配器（Gemini / Ollama）───────────────────────────────────────
+providers:
+  gemini:
+    # api_key: ""           # Gemini API Key（建议用环境变量 GEMINI_API_KEY）
+  ollama:
+    # host: "http://localhost:11434"  # Ollama 服务地址
+
+# ── UI / 国际化 ────────────────────────────────────────────────────────
+ui:
+  # locale: "zh"            # 默认语言（zh / en）
+  # timezone: "Asia/Shanghai"  # 默认时区
+
+# ── 调优参数（开发/运维可调整的内部参数）───────────────────────────────
+tuning:
+  # ── 分页 ──────────────────────────────────────────────────
+  # page_size_default: 10
+  # page_size_min: 1
+  # page_size_max: 200
+
+  # ── 超时（秒）─────────────────────────────────────────────
+  # sse_timeout: 300.0           # SSE 流式响应
+  # chat_timeout: 600.0          # 聊天请求
+  # plan_step_timeout: 300.0     # 单步计划任务
+  # orchestrated_timeout: 900.0  # 多 Agent 编排
+
+  # ── 数据库 ────────────────────────────────────────────────
+  # db_busy_timeout_ms: 5000     # SQLite 写锁等待超时（毫秒）
+  # db_health_check_interval_s: 120  # DB 健康检查间隔（秒）
+
+  # ── 请求限制 ──────────────────────────────────────────────
+  # max_text_length: 128000      # prompt 最大字符数
+  # max_session_name_length: 256 # Session 名称最大长度
+  # max_agent_profile_length: 64 # Agent profile 名称最大长度
+  # max_channels_per_type: 10    # 每种消息平台的渠道数量上限
+
+  # ── 会话 ──────────────────────────────────────────────────
+  # default_session_cols: 120    # 新 session 默认终端列宽
+  # session_chain_max_depth: 10  # Session 链查询最大回溯深度
+
+  # ── Agent 生命周期（秒）───────────────────────────────────
+  # agent_startup_timeout: 30.0  # Agent 子进程启动最大等待
+  # agent_shutdown_timeout: 10.0 # Agent 子进程关闭最大等待
+
+  # ── 限流 ──────────────────────────────────────────────────
+  # rate_limit_window: 60        # 时间窗口（秒）
+  # rate_limit_max: 120          # 窗口内最大请求数

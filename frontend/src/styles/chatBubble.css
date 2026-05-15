@@ -1,0 +1,142 @@
+/* ============================================================
+   ChatBubble Component Styles
+   ============================================================ */
+
+/* --- Outer wrapper (flex alignment) --- */
+.cb-outer {
+  align-self: flex-end;
+  max-width: min(100%, 520px);
+  min-width: 0;
+  width: fit-content;
+}
+
+.cb-outer--responder {
+  align-self: flex-start;
+}
+
+/* --- Inner flex column --- */
+.cb-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+/* --- Header row (avatar + name + time) --- */
+.cb-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+.cb-header--initiator {
+  justify-content: flex-end;
+}
+
+.cb-header--responder {
+  justify-content: flex-start;
+}
+
+/* --- Avatar base style --- */
+.cb-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #2a3140;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #8b93a7;
+  flex-shrink: 0;
+}
+
+/* --- Time stamp --- */
+.cb-time {
+  font-size: 9px;
+  color: #666;
+  flex-shrink: 0;
+}
+
+/* --- Agent / user name label --- */
+.cb-name {
+  font-size: 11px;
+  font-weight: bold;
+  color: #c8a84b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cb-name--initiator {
+  flex: 0 1 auto;
+  text-align: right;
+}
+
+.cb-name--responder {
+  flex: 1;
+  text-align: left;
+}
+
+/* --- Bubble container --- */
+.cb-bubble {
+  border-radius: 12px;
+  padding: 8px 10px;
+  min-width: 0;
+}
+
+.cb-bubble--user {
+  border: 1px solid #4a5a8a;
+  background: rgba(42, 58, 90, 0.35);
+}
+
+.cb-bubble--assistant {
+  border: 1px solid #2a4a3a;
+  background: rgba(26, 58, 42, 0.25);
+}
+
+/* --- Bubble text body --- */
+.cb-text {
+  font-size: 11px;
+  white-space: pre-wrap;
+}
+
+/* --- Attachments container --- */
+.cb-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+/* --- Single attachment styles --- */
+.cb-attachment-img {
+  max-width: 192px;
+  max-height: 96px;
+  object-fit: contain;
+  border-radius: 4px;
+  border: 1px solid #2a3140;
+}
+
+.cb-attachment-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(42, 58, 90, 0.35);
+  border: 1px solid #4a5a8a;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+/* --- Canvas avatar in chat --- */
+.chat-msg-avatar {
+  border-radius: 50%;
+  flex-shrink: 0;
+  image-rendering: pixelated;
+  background: #2a3140;
+}

@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HermesDigitalStudio</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0c0e12;
+        --panel: #141820;
+        --border: #2a3140;
+        --text: #e8eaef;
+        --muted: #8b93a7;
+        --accent: #5b8cff;
+        --input: #0f1218;
+        --panel-w: 260px;
+        --menu-h: 48px;
+      }
+      *, *::before, *::after { box-sizing: border-box; }
+      @keyframes hds-tool-pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.35; }
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(1.15); }
+      }
+      html, body, #root {
+        height: 100%;
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+        overflow: hidden;
+      }
+      #app-shell {
+        position: relative;
+        width: 100%;
+        height: 100%;
+      }
+      #shell-bottom {
+        height: var(--menu-h);
+        background: var(--panel);
+        border-top: 1px solid var(--border);
+        z-index: 10;
+        box-sizing: border-box;
+        pointer-events: auto;
+      }
+      .shell-panel {
+        position: absolute;
+        top: 0;
+        bottom: var(--menu-h);
+        display: flex;
+        flex-direction: column;
+        overflow: visible;
+        background: rgba(20, 24, 32, 0.72);
+        backdrop-filter: blur(14px) saturate(1.4);
+        -webkit-backdrop-filter: blur(14px) saturate(1.4);
+        z-index: 5;
+        transition: width 0.2s ease, min-width 0.2s ease;
+        pointer-events: auto;
+      }
+      #shell-left {
+        left: 0;
+        width: var(--panel-w);
+        border-right: 1px solid rgba(42, 49, 64, 0.6);
+      }
+      #shell-left.collapsed {
+        width: 0;
+        min-width: 0;
+        border-right: none;
+      }
+      #shell-right {
+        right: 0;
+        width: min(380px, 38vw);
+        border-left: 1px solid rgba(42, 49, 64, 0.6);
+      }
+      #shell-right.collapsed {
+        width: 0;
+        min-width: 0;
+        border-left: none;
+      }
+      .shell-panel-toggle {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 20px;
+        height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: #8b93a7;
+        font-size: 13px;
+        background: rgba(20, 24, 32, 0.7);
+        border-radius: 0 8px 8px 0;
+        user-select: none;
+        z-index: 6;
+        writing-mode: vertical-rl;
+        letter-spacing: 1px;
+        transition: background 0.15s, color 0.15s;
+        pointer-events: auto;
+      }
+      .shell-panel-toggle:hover {
+        background: rgba(91, 140, 255, 0.35);
+        color: #e8eaef;
+      }
+      #toggle-right {
+        right: 0;
+        top: 10px;
+        transform: none;
+        width: 20px;
+        height: 28px;
+        border-radius: 6px 0 0 6px;
+        display: none;
+        writing-mode: horizontal-tb;
+        font-size: 13px;
+      }
+      #shell-right.collapsed ~ #toggle-right {
+        display: flex;
+      }
+      #toggle-left {
+        left: 0;
+        top: 10px;
+        transform: none;
+        width: 20px;
+        height: 28px;
+        border-radius: 0 6px 6px 0;
+        display: none;
+        writing-mode: horizontal-tb;
+        font-size: 13px;
+      }
+      #shell-left.collapsed ~ #toggle-left {
+        display: flex;
+      }
+      .shell-panel-content {
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        min-height: 0;
+      }
+      #shell-right .shell-panel-content {
+        overflow: hidden;
+      }
+      #chat-header {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        min-width: 0;
+      }
+      #chat-body-row {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        min-height: 0;
+        min-width: 0;
+        gap: 6px;
+      }
+      #shell-left.collapsed .shell-panel-content,
+      #shell-right.collapsed .shell-panel-content {
+        display: none;
+      }
+      .agent-card {
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 10px;
+        border: 1.5px solid transparent;
+        transition: background 0.15s, border-color 0.15s;
+        min-width: 80px;
+      }
+      .agent-card:hover { background: rgba(91, 140, 255, 0.12); border-color: rgba(91, 140, 255, 0.35); }
+      .agent-card.selected { background: rgba(91, 140, 255, 0.18); border-color: #5b8cff; }
+      .agent-card canvas {
+        image-rendering: pixelated;
+        display: block;
+      }
+      .agent-card-name {
+        font-size: 11px;
+        color: #e8eaef;
+        text-align: center;
+        max-width: 80px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .agent-card-profile {
+        font-size: 10px;
+        color: #8b93a7;
+        text-align: center;
+        max-width: 80px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <div id="app-shell">
+        <div id="shell-center"></div>
+        <aside id="shell-left" class="shell-panel"></aside>
+        <aside id="shell-right" class="shell-panel"></aside>
+        <footer id="shell-bottom"></footer>
+        <div id="toggle-left" class="shell-panel-toggle">›</div>
+        <div id="toggle-right" class="shell-panel-toggle">‹</div>
+        <div id="dock-panel">
+          <div class="dock-panel__header">
+            <h3 class="dock-panel__title">🤖 Agents</h3>
+            <button class="dock-panel__close">×</button>
+          </div>
+          <div class="dock-panel__scroll"></div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,187 @@
+/* ── TaskList 单行任务样式 ── */
+
+.task-list-empty {
+  font-size: 12px;
+  color: #475569;
+  text-align: center;
+  padding: 40px 0;
+}
+
+/* ── 清空按钮 ── */
+.task-list-clear-btn {
+  background: transparent;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  border-radius: 5px;
+  color: #f87171;
+  font-size: 11px;
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.task-list-clear-btn:hover {
+  background: rgba(248, 113, 113, 0.1);
+  border-color: rgba(248, 113, 113, 0.6);
+}
+
+/* ── 单行任务 ── */
+.task-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: default;
+  transition: background 0.14s;
+  margin-bottom: 5px;
+  min-width: 0;
+  position: relative;
+}
+
+.task-row:hover {
+  background: rgba(91, 140, 255, 0.08);
+}
+
+.task-row--selected {
+  background: rgba(91, 140, 255, 0.14);
+  outline: 1px solid rgba(91, 140, 255, 0.45);
+}
+
+/* ── 单行删除按钮 ── */
+.task-row__delete {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(248, 113, 113, 0.8);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.task-row:hover .task-row__delete {
+  opacity: 1;
+}
+
+.task-row__delete:hover {
+  background: rgba(248, 113, 113, 1);
+}
+
+/* 任务名称 */
+.task-row__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #cbd5e1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+  flex-shrink: 0;
+}
+
+/* ── 步骤状态灯 ── */
+.task-row__dots {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.task-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── 进度条（粗+百分比居中） ── */
+.task-row__bar-wrap {
+  flex: 1;
+  min-width: 80px;
+}
+
+.task-row__bar {
+  position: relative;
+  height: 16px;
+  background: #1e293b;
+  border-radius: 999px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.task-row__fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.task-row__bar-label {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  pointer-events: none;
+  mix-blend-mode: normal;
+}
+
+/* 分隔符 */
+.task-row__sep {
+  color: #334155;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+/* 状态文字 */
+.task-row__status {
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Agent */
+.task-row__agent {
+  font-size: 11px;
+  color: #64748b;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* 时间 */
+.task-row__time {
+  font-size: 11px;
+  color: #475569;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* 进行中呼吸点 */
+.task-row__live {
+  font-size: 8px;
+  color: #60a5fa;
+  flex-shrink: 0;
+  animation: task-live 1.4s ease-in-out infinite;
+}
+
+@keyframes task-live {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.25; }
+}

@@ -1,0 +1,165 @@
+/* ── ChannelList — 紧凑卡片网格布局（与 AgentList 等大） ── */
+
+/* ── 卡片网格 ── */
+.channel-card-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-content: flex-start;
+}
+
+/* ── 单个通道卡片 — 尺寸与 agent-card 完全一致 ── */
+.channel-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  width: 72px;
+  flex-shrink: 0;
+  position: relative;
+  /* 容纳 hover action overlay */
+  overflow: hidden;
+}
+
+.channel-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(91, 140, 255, 0.25);
+}
+
+/* ── 平台图标（与 agent-card-sprite 等大: 40×52px） ── */
+.channel-card__icon {
+  width: 40px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  background: #1e2433;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+/* ── 通道名称（与 agent-card-name 等大） ── */
+.channel-card__name {
+  font-size: 10px;
+  font-weight: 500;
+  color: #c8cdd9;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  line-height: 1.3;
+}
+
+/* ── 状态点（与上方 meta 配合，单行） ── */
+.channel-card__dot {
+  display: none; /* 合并到 status 内 */
+}
+
+/* ── 状态文字 ── */
+.channel-card__status {
+  font-size: 9px;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* ── 次要信息（chatId 或 platform — 占用 meta 行） ── */
+.channel-card__meta {
+  font-size: 9px;
+  color: #475569;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  line-height: 1.2;
+}
+
+/* ── 绑定的 Agent 名称 ── */
+.channel-card__agent {
+  font-size: 8px;
+  color: #5b8cff;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  line-height: 1.2;
+}
+
+/* ── 悬停操作按钮（覆盖在卡片右下角） ── */
+.channel-card__actions {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  display: flex;
+  gap: 3px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.channel-card:hover .channel-card__actions {
+  opacity: 1;
+}
+
+.channel-card__btn {
+  padding: 2px 5px;
+  background: rgba(20, 24, 32, 0.88);
+  border: 1px solid rgba(42, 49, 64, 0.9);
+  border-radius: 4px;
+  color: #8b93a7;
+  font-size: 9px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  line-height: 1.4;
+}
+
+.channel-card__btn:hover {
+  background: rgba(91, 140, 255, 0.18);
+  border-color: rgba(91, 140, 255, 0.5);
+  color: #e8eaef;
+}
+
+.channel-card__btn--danger {
+  border-color: rgba(248, 113, 113, 0.35);
+  color: #f87171;
+}
+
+.channel-card__btn--danger:hover {
+  background: rgba(248, 113, 113, 0.15);
+  border-color: rgba(248, 113, 113, 0.6);
+  color: #fca5a5;
+}
+
+/* ── 添加卡片（与 agent-add-card 等大） ── */
+.channel-card--add {
+  opacity: 0.75;
+  border-style: dashed;
+  border-color: rgba(91, 140, 255, 0.3);
+  background: rgba(91, 140, 255, 0.04);
+}
+
+.channel-card--add:hover {
+  opacity: 1;
+  border-color: rgba(91, 140, 255, 0.6);
+  background: rgba(91, 140, 255, 0.09);
+}
+
+/* ── 空状态 ── */
+.channel-list-empty {
+  font-size: 12px;
+  color: #475569;
+  text-align: center;
+  padding: 24px 0;
+}
+
+/* ── 旧列表布局废弃 ── */
+.channel-list { display: none; }
+.channel-row { display: none; }

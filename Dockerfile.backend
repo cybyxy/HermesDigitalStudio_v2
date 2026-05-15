@@ -1,0 +1,30 @@
+FROM python:3.11-slim AS builder
+
+WORKDIR /app
+
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Install dependencies
+COPY backend/pyproject.toml backend/pyproject.toml
+COPY vendor/ vendor/
+RUN cd backend && uv sync --no-dev
+
+# Copy source
+COPY backend/src/ backend/src/
+COPY backend/main.py backend/main.py
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY --from=builder /app /app
+
+ENV PYTHONPATH=/app/src:/app/vendor/hermes-agent
+ENV HERMES_HOME=/app/data/hermes
+ENV HERMES_STUDIO_DATA_DIR=/app/data/studio
+ENV PORT=9120
+
+EXPOSE 9120
+
+CMD ["python", "backend/main.py"]

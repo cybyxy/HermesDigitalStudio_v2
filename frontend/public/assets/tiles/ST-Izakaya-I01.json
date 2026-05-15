@@ -1,0 +1,15 @@
+{
+  "columns": 8,
+  "image": "ST-Izakaya-I01.png",
+  "imageheight": 2048,
+  "imagewidth": 256,
+  "margin": 0,
+  "name": "office",
+  "spacing": 0,
+  "tilecount": 512,
+  "tiledversion": "1.11.2",
+  "tileheight": 32,
+  "tilewidth": 32,
+  "type": "tileset",
+  "version": "1.10"
+}

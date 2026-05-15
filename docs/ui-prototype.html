@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HermesDigitalStudio v2 — UI Prototype</title>
+<style>
+/* ===== DESIGN TOKENS ===== */
+:root {
+  --bg: #0c0e12;
+  --panel: #141820;
+  --surface: #1e2433;
+  --border: #2a3140;
+  --text: #e8eaef;
+  --muted: #8b93a7;
+  --dim: #6b7280;
+  --accent: #5b8cff;
+  --success: #22c55e;
+  --warning: #fbbf24;
+  --error: #ef4444;
+  --chat-user: #1e3a5f;
+  --chat-assistant: #1e2433;
+  --transition: all 0.2s ease;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 12px; color: var(--text); background: var(--bg);
+  height: 100vh; overflow: hidden; user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ===== LAYOUT ===== */
+#app { display: flex; flex-direction: column; height: 100vh; }
+#main-area { flex: 1; display: flex; overflow: hidden; }
+
+/* ===== PANELS ===== */
+.panel-left, .panel-right { background: var(--panel); overflow: hidden; display: flex; flex-direction: column; }
+.panel-left { width: 260px; border-right: 1px solid var(--border); }
+.panel-right { width: min(380px, 38vw); min-width: 320px; border-left: 1px solid var(--border); }
+.panel-header {
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px; font-weight: 600;
+}
+.panel-body { flex: 1; overflow: auto; padding: 12px; }
+
+/* ===== OFFICE CANVAS ===== */
+#office-canvas {
+  flex: 1; position: relative; overflow: hidden;
+  background: radial-gradient(ellipse at center, rgba(20,24,32,0) 0%, var(--bg) 100%);
+}
+#office-canvas::before {
+  content: ''; position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(42,49,64,0.15) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(42,49,64,0.15) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+.canvas-label {
+  position: absolute; top: 10px; left: 10px; font-size: 10px; color: var(--dim);
+  background: rgba(0,0,0,0.5); padding: 3px 8px; border-radius: 3px;
+}
+.agent-sprite {
+  position: absolute; display: flex; flex-direction: column; align-items: center;
+  gap: 2px; cursor: pointer; transition: transform 0.2s;
+}
+.agent-sprite:hover { transform: translate(-50%,-55%) scale(1.1); }
+.agent-sprite.selected { transform: translate(-50%,-55%) scale(1.15); }
+.sprite-body {
+  width: 32px; height: 48px; border-radius: 3px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: bold; color: #fff;
+  border: 2px solid rgba(255,255,255,0.2); image-rendering: pixelated;
+  transition: box-shadow 0.3s;
+}
+.agent-sprite.selected .sprite-body {
+  border-color: var(--text); box-shadow: 0 0 14px var(--accent);
+}
+.sprite-label {
+  font-size: 9px; color: var(--muted); background: rgba(0,0,0,0.6);
+  padding: 1px 5px; border-radius: 3px;
+}
+
+/* ===== STATUS BAR ===== */
+#status-bar {
+  height: 48px; min-height: 48px; background: var(--panel);
+  border-top: 1px solid var(--border); display: flex; align-items: center;
+  padding: 0 10px; gap: 6px; position: relative; z-index: 10;
+}
+.menu-btn {
+  padding: 4px 8px; border-radius: 4px; border: none; cursor: pointer;
+  background: transparent; color: var(--muted); font-size: 11px;
+  display: flex; align-items: center; gap: 3px; transition: var(--transition);
+  white-space: nowrap;
+}
+.menu-btn:hover { background: rgba(91,140,255,0.1); color: var(--accent); }
+.menu-btn.active { background: rgba(91,140,255,0.15); color: var(--accent); }
+#heartbeat-msg {
+  flex: 1; font-size: 10px; color: var(--dim); overflow: hidden;
+  white-space: nowrap; text-overflow: ellipsis; padding: 0 6px;
+}
+.energy-group { display: flex; flex-direction: column; gap: 1px; min-width: 75px; }
+.energy-label { display: flex; justify-content: space-between; font-size: 9px; color: var(--muted); }
+.energy-track { height: 4px; border-radius: 2px; background: var(--border); overflow: hidden; }
+.energy-fill { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
+.emotion-dots { display: flex; gap: 5px; }
+.emotion-dot { width: 7px; height: 7px; border-radius: 50%; cursor: help; }
+#chat-input {
+  width: 150px; height: 26px; padding: 0 8px; border-radius: 5px;
+  background: var(--surface); border: 1px solid var(--border); color: var(--text);
+  font-size: 11px; outline: none;
+}
+#chat-input:focus { border-color: var(--accent); }
+.btn-send {
+  padding: 4px 10px; border-radius: 4px; border: none; cursor: pointer;
+  background: var(--accent); color: #fff; font-size: 11px; font-weight: 500;
+  display: flex; align-items: center; gap: 3px; transition: var(--transition);
+}
+.btn-send:hover { background: #4a7ae6; }
+.btn-icon {
+  padding: 4px; border-radius: 4px; border: none; cursor: pointer;
+  background: transparent; color: var(--muted); font-size: 13px;
+  display: flex; align-items: center; transition: var(--transition);
+}
+.btn-icon:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+
+/* ===== DOCK PANEL ===== */
+#dock-overlay {
+  position: fixed; bottom: 48px; left: 0; right: 0; z-index: 8;
+  height: 0; background: var(--panel); border-top: 1px solid transparent;
+  transition: height 0.3s ease-out, border-color 0.3s; overflow: hidden;
+}
+#dock-overlay.open { height: min(22vh, 200px); border-color: var(--border); }
+#dock-inner { height: 100%; display: flex; flex-direction: column; }
+#dock-tabs { display: flex; border-bottom: 1px solid var(--border); padding: 0 14px; flex-shrink: 0; }
+.dock-tab {
+  padding: 5px 12px; border: none; cursor: pointer; font-size: 10px;
+  background: transparent; color: var(--muted);
+  border-bottom: 2px solid transparent; transition: var(--transition);
+}
+.dock-tab:hover { color: var(--accent); }
+.dock-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+#dock-content { flex: 1; overflow: auto; padding: 10px 14px; display: none; }
+#dock-content.show { display: flex; }
+.dock-grid { display: flex; gap: 8px; flex-wrap: wrap; align-content: flex-start; }
+.agent-card, .dock-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 7px;
+  padding: 8px; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  min-width: 90px; cursor: pointer; transition: var(--transition);
+}
+.agent-card:hover, .dock-card:hover { border-color: rgba(91,140,255,0.35); box-shadow: 0 0 12px rgba(91,140,255,0.1); }
+.agent-card.selected { border-color: var(--accent); }
+.mini-avatar {
+  width: 32px; height: 48px; border-radius: 3px; display: flex;
+  align-items: center; justify-content: center; font-size: 14px; color: #fff; font-weight: bold;
+}
+.status-dot { width: 6px; height: 6px; border-radius: 50%; }
+.status-dot.online { background: var(--success); box-shadow: 0 0 4px var(--success); }
+.status-dot.offline { background: var(--muted); }
+
+/* ===== MODAL ===== */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.6); backdrop-filter: blur(3px);
+  display: none;
+}
+.modal-overlay.show { display: flex; }
+.modal-box {
+  background: var(--panel); border-radius: 10px; border: 1px solid var(--border);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5); overflow: hidden;
+  max-height: 80vh; display: flex; flex-direction: column;
+  animation: modalIn 0.25s ease-out;
+}
+@keyframes modalIn { from { opacity:0; transform:scale(0.95) translateY(10px); } to { opacity:1; transform:scale(1) translateY(0); } }
+.modal-header {
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+  font-weight: 600; font-size: 13px;
+}
+.modal-body { padding: 14px; overflow: auto; flex: 1; }
+.modal-footer {
+  padding: 10px 14px; border-top: 1px solid var(--border);
+  display: flex; justify-content: flex-end; gap: 8px;
+}
+.modal-tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.modal-tab {
+  flex: 1; padding: 7px; border: none; cursor: pointer; font-size: 11px;
+  background: transparent; color: var(--muted);
+  border-bottom: 2px solid transparent; transition: var(--transition);
+}
+.modal-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ===== CHAT ===== */
+.chat-bubble { margin-bottom: 8px; }
+.chat-bubble.user { display: flex; justify-content: flex-end; }
+.chat-bubble.assistant { display: flex; gap: 8px; }
+.bubble-body { max-width: 85%; padding: 8px 11px; font-size: 11px; line-height: 1.5; white-space: pre-wrap; }
+.bubble-body.user { background: var(--chat-user); border-radius: 10px 10px 2px 10px; }
+.bubble-body.assistant { background: var(--chat-assistant); border: 1px solid var(--border); border-radius: 10px 10px 10px 2px; }
+.bubble-time { font-size: 9px; color: rgba(200,210,220,0.5); margin-top: 3px; display: flex; justify-content: space-between; }
+.chat-avatar {
+  width: 26px; height: 26px; border-radius: 4px; display: flex;
+  align-items: center; justify-content: center; font-size: 10px; color: #fff; flex-shrink: 0;
+}
+.thinking-block {
+  padding: 5px 10px; margin-left: 34px; font-size: 10px; color: var(--muted);
+  background: rgba(91,140,255,0.06); border-radius: 5px; border: 1px solid rgba(91,140,255,0.12);
+}
+.tool-block {
+  margin-left: 34px; padding: 5px 9px; background: var(--surface); border-radius: 5px;
+  border: 1px solid var(--border); font-size: 10px;
+}
+
+/* ===== PLAN TIMELINE ===== */
+.timeline { position: relative; padding-left: 18px; }
+.timeline-rail { position: absolute; left: 6px; top: 8px; bottom: 8px; width: 2px; background: var(--border); }
+.tl-step { position: relative; margin-bottom: 16px; }
+.tl-dot {
+  position: absolute; left: -14px; top: 3px; width: 10px; height: 10px; border-radius: 50%;
+  border: 2px solid var(--border); background: var(--border);
+}
+.tl-dot.done { background: var(--success); border-color: var(--success); }
+.tl-dot.active { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 8px rgba(91,140,255,0.4); }
+.tl-title { font-size: 11px; margin-bottom: 2px; }
+.tl-status { font-size: 9px; color: var(--dim); }
+.badge {
+  display: inline-block; padding: 2px 7px; border-radius: 3px; font-size: 10px;
+  margin-right: 4px; margin-bottom: 4px;
+}
+.badge.blue { background: rgba(91,140,255,0.15); color: var(--accent); }
+.badge.purple { background: rgba(139,92,246,0.15); color: #a78bfa; }
+
+/* ===== SKILL LIST ===== */
+.skill-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 5px 9px; margin-bottom: 3px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+}
+.toggle-switch {
+  width: 30px; height: 16px; border-radius: 8px; cursor: pointer;
+  position: relative; transition: background 0.2s;
+}
+.toggle-switch.on { background: var(--success); }
+.toggle-switch.off { background: var(--border); }
+.toggle-knob {
+  position: absolute; top: 2px; width: 12px; height: 12px; border-radius: 50%;
+  background: #fff; transition: left 0.2s;
+}
+.toggle-switch.on .toggle-knob { left: 16px; }
+.toggle-switch.off .toggle-knob { left: 2px; }
+
+/* ===== UTILITY ===== */
+.btn {
+  padding: 5px 10px; border-radius: 4px; border: 1px solid var(--border); cursor: pointer;
+  background: var(--surface); color: var(--muted); font-size: 11px; transition: var(--transition);
+}
+.btn:hover { border-color: var(--accent); color: var(--text); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.ghost { background: transparent; border-color: transparent; }
+input[type="text"], input[type="password"], textarea, select {
+  width: 100%; padding: 5px 8px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 5px; color: var(--text); font-size: 11px; outline: none;
+}
+input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+.form-group { margin-bottom: 10px; }
+.form-label { display: block; font-size: 10px; color: var(--muted); margin-bottom: 3px; }
+.progress-bar { height: 3px; border-radius: 2px; background: var(--border); overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
+.cursor-blink { animation: blink 0.8s step-end infinite; color: var(--accent); }
+@keyframes blink { 50% { opacity: 0; } }
+.card-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.stat-box { background: var(--surface); border: 1px solid var(--border); border-radius: 7px; padding: 10px; }
+.small-thought {
+  position: absolute; bottom: 56px; right: 240px; max-width: 260px;
+  background: rgba(20,24,32,0.97); backdrop-filter: blur(12px);
+  border: 1px solid rgba(91,140,255,0.3); border-radius: 8px;
+  padding: 8px 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  z-index: 20; animation: floatUp 6s ease-out forwards;
+}
+@keyframes floatUp { 0% { opacity:1; transform:translateY(0); } 80% { opacity:1; } 100% { opacity:0; transform:translateY(-50px); } }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- MAIN AREA -->
+  <div id="main-area">
+    <!-- LEFT PANEL: Plan Timeline -->
+    <div class="panel-left" id="left-panel">
+      <div class="panel-header">
+        <span>📋 计划时间线</span>
+        <button class="btn-icon" onclick="toggleLeftPanel()" title="折叠">◀</button>
+      </div>
+      <div class="panel-body">
+        <!-- Plan Header -->
+        <div style="margin-bottom:14px">
+          <div style="margin-bottom:6px;display:flex;gap:4px;flex-wrap:wrap">
+            <span class="badge blue">🎯 Planner: Alice</span>
+            <span class="badge purple">👥 Bob, Clio</span>
+          </div>
+          <div style="font-weight:600;font-size:12px;margin-bottom:2px">系统安全审计与优化方案</div>
+          <div style="font-size:10px;color:var(--dim)">创建于 10:25 · 2/4 步骤完成</div>
+        </div>
+        <!-- Timeline Steps -->
+        <div class="timeline">
+          <div class="timeline-rail"></div>
+          <div class="tl-step"><div class="tl-dot done"></div><div class="tl-title">Step 1: 代码安全扫描</div><div class="tl-status">✅ 已完成</div></div>
+          <div class="tl-step"><div class="tl-dot active"></div><div class="tl-title">Step 2: 漏洞分析与评估</div><div class="tl-status">🔄 进行中</div></div>
+          <div class="tl-step"><div class="tl-dot"></div><div class="tl-title" style="color:var(--muted)">Step 3: 生成修复方案</div><div class="tl-status">⏳ 待处理</div></div>
+          <div class="tl-step"><div class="tl-dot"></div><div class="tl-title" style="color:var(--muted)">Step 4: 文档更新与归档</div><div class="tl-status">⏳ 待处理</div></div>
+        </div>
+        <!-- Deliverables -->
+        <div style="margin-top:14px;padding:9px;background:var(--surface);border-radius:6px;border:1px solid var(--border)">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:5px">📁 交付物</div>
+          <div style="display:flex;flex-direction:column;gap:3px">
+            <span style="font-size:10px;color:var(--accent);cursor:pointer">📄 security-report.pdf</span>
+            <span style="font-size:10px;color:var(--accent);cursor:pointer">📄 fixes.patch</span>
+            <span style="font-size:10px;color:var(--accent);cursor:pointer">📄 audit-log.json</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTER: Office Canvas -->
+    <div id="office-canvas">
+      <span class="canvas-label">2D Office Canvas · <span id="online-count">5</span> agents online</span>
+      <!-- Agent sprites rendered by JS -->
+    </div>
+
+    <!-- RIGHT PANEL: Chat -->
+    <div class="panel-right" id="right-panel">
+      <div class="panel-header">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="chat-avatar" id="active-agent-avatar" style="width:28px;height:36px;border-radius:3px"></div>
+          <div>
+            <div id="active-agent-name" style="font-size:12px"></div>
+            <div id="active-agent-meta" style="font-size:9px;color:var(--muted)"></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center">
+          <span class="status-dot online"></span>
+          <button class="btn-icon" onclick="toggleRightPanel()" title="折叠">▶</button>
+        </div>
+      </div>
+      <div class="panel-body" id="chat-messages">
+        <!-- Chat messages rendered by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- STATUS BAR -->
+  <div id="status-bar">
+    <button class="menu-btn active" onclick="toggleDock('agents',this)">🤖 Agent</button>
+    <button class="menu-btn" onclick="toggleDock('tasks',this)">📋 任务</button>
+    <button class="menu-btn" onclick="toggleDock('channels',this)">📡 通道</button>
+    <button class="menu-btn" onclick="toggleDock('models',this)">🔧 模型</button>
+    <button class="menu-btn" onclick="toggleDock('skills',this)">🎯 技能</button>
+    <button class="menu-btn" onclick="toggleDock('memory',this)">💾 记忆</button>
+    <button class="btn-icon" onclick="showSettings()" title="设置">⚙</button>
+
+    <div id="heartbeat-msg">💭 Bob 正在思考: 用户最近在关注前端安全，或许可以提前准备一份OWASP Top 10...</div>
+
+    <div class="energy-group">
+      <div class="energy-label"><span>🍞 饱食度</span><span id="satiety-val">75%</span></div>
+      <div class="energy-track"><div class="energy-fill" id="satiety-bar" style="width:75%;background:linear-gradient(90deg,#22c55e,#fbbf24)"></div></div>
+    </div>
+    <div class="energy-group">
+      <div class="energy-label"><span>⚡ 生物电流</span><span id="bio-val">4/10</span></div>
+      <div class="energy-track"><div class="energy-fill" id="bio-bar" style="width:40%;background:linear-gradient(90deg,#3b82f6,#f59e0b)"></div></div>
+    </div>
+
+    <div class="emotion-dots">
+      <span class="emotion-dot" id="emo-v" style="background:#22c55e" title="Valence: 0.7"></span>
+      <span class="emotion-dot" id="emo-a" style="background:#3b82f6" title="Arousal: 0.3"></span>
+      <span class="emotion-dot" id="emo-d" style="background:#5b8cff" title="Dominance: 0.5"></span>
+    </div>
+
+    <input type="text" id="chat-input" placeholder="输入消息..." onkeydown="if(event.key==='Enter')sendMessage()">
+    <button class="btn-icon" title="语音">🎤</button>
+    <button class="btn-send" onclick="sendMessage()">➤ 发送</button>
+  </div>
+
+  <!-- DOCK PANEL -->
+  <div id="dock-overlay">
+    <div id="dock-inner">
+      <div id="dock-tabs">
+        <button class="dock-tab active" onclick="setDockTab('agents',this)">🤖 Agent</button>
+        <button class="dock-tab" onclick="setDockTab('tasks',this)">📋 任务</button>
+        <button class="dock-tab" onclick="setDockTab('channels',this)">📡 通道</button>
+        <button class="dock-tab" onclick="setDockTab('models',this)">🔧 模型</button>
+        <button class="dock-tab" onclick="setDockTab('skills',this)">🎯 技能</button>
+        <button class="dock-tab" onclick="setDockTab('memory',this)">💾 记忆</button>
+      </div>
+      <div id="dock-content" class="show dock-grid"></div>
+    </div>
+  </div>
+
+  <!-- MODAL OVERLAYS -->
+  <div class="modal-overlay" id="modal-agent">
+    <div class="modal-box" style="width:540px" onclick="event.stopPropagation()">
+      <div class="modal-header"><span>✏️ 编辑 Agent — <span id="edit-agent-name"></span></span><button class="btn-icon" onclick="closeModal('modal-agent')">✕</button></div>
+      <div class="modal-tabs">
+        <button class="modal-tab active" onclick="switchAgentTab('persona',this)">👤 角色</button>
+        <button class="modal-tab" onclick="switchAgentTab('role',this)">🧠 人格</button>
+      </div>
+      <div class="modal-body" id="agent-form-persona">
+        <div class="form-group"><label class="form-label">显示名称</label><input type="text" id="af-name"></div>
+        <div class="form-group"><label class="form-label">角色</label><input type="text" id="af-role"></div>
+        <div class="form-group"><label class="form-label">头像</label><div id="avatar-picker" style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px"></div></div>
+      </div>
+      <div class="modal-body" id="agent-form-role" style="display:none">
+        <div class="form-group"><label class="form-label">个性描述</label><textarea rows="3" placeholder="描述 agent 的性格、说话风格、行为习惯..."></textarea></div>
+        <div class="form-group"><label class="form-label">口头禅</label><input type="text" placeholder="例如: 让我想想..."></div>
+        <div class="form-group"><label class="form-label">表情包/梗</label><input type="text" placeholder="例如: 认真脸.jpg"></div>
+        <div class="form-group"><label class="form-label">顶嘴力度</label>
+          <div style="display:flex;gap:6px">
+            <button class="btn" style="border-color:var(--accent);background:rgba(91,140,255,0.15);color:var(--accent)">温和 (1)</button>
+            <button class="btn">幽默 (2)</button>
+            <button class="btn">直率 (3)</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer"><button class="btn" onclick="closeModal('modal-agent')">取消</button><button class="btn primary" onclick="closeModal('modal-agent')">保存</button></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-model">
+    <div class="modal-box" style="width:460px" onclick="event.stopPropagation()">
+      <div class="modal-header"><span>🔧 添加模型</span><button class="btn-icon" onclick="closeModal('modal-model')">✕</button></div>
+      <div class="modal-body">
+        <div class="form-group"><label class="form-label">提供商</label>
+          <select><option>🔷 OpenAI</option><option>🧠 Anthropic</option><option>🔺 Google (Gemini)</option><option>🏠 Ollama (本地)</option><option>🔍 DeepSeek</option><option>⚡ Groq</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">模型名称</label><input type="text" placeholder="例如: gpt-4o"></div>
+        <div class="form-group"><label class="form-label">API Key</label><input type="password" placeholder="sk-..."></div>
+        <div class="form-group"><label class="form-label">Base URL (可选)</label><input type="text" placeholder="https://api.openai.com/v1"></div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);cursor:pointer">
+          <input type="checkbox" style="accent-color:var(--accent)"> 设为默认模型
+        </label>
+      </div>
+      <div class="modal-footer"><button class="btn" onclick="closeModal('modal-model')">取消</button><button class="btn primary" onclick="closeModal('modal-model')">保存</button></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-memory">
+    <div class="modal-box" style="width:680px" onclick="event.stopPropagation()">
+      <div class="modal-header"><span>📊 <span id="mem-agent-name"></span> 的记忆详情</span><button class="btn-icon" onclick="closeModal('modal-memory')">✕</button></div>
+      <div class="modal-tabs">
+        <button class="modal-tab active" onclick="switchMemTab('dual',this)">📊 双重记忆</button>
+        <button class="modal-tab" onclick="switchMemTab('kg',this)">🔗 知识图谱</button>
+        <button class="modal-tab" onclick="switchMemTab('myelin',this)">🧬 髓鞘化</button>
+      </div>
+      <div class="modal-body" id="mem-tab-dual">
+        <div class="card-stats">
+          <div class="stat-box"><div style="font-size:9px;color:var(--muted);margin-bottom:4px">🧬 向量记忆</div><div style="font-size:18px;font-weight:700;color:var(--accent)">1,872</div><div style="font-size:9px;color:var(--dim)">总条目 · 最近10分钟前</div></div>
+          <div class="stat-box"><div style="font-size:9px;color:var(--muted);margin-bottom:4px">🔗 知识图谱</div><div style="display:flex;gap:14px"><div><span style="font-size:16px;font-weight:700;color:var(--success)">45</span><span style="font-size:8px;color:var(--dim)"> 节点</span></div><div><span style="font-size:16px;font-weight:700;color:var(--warning)">128</span><span style="font-size:8px;color:var(--dim)"> 边</span></div></div></div>
+          <div class="stat-box"><div style="font-size:9px;color:var(--muted);margin-bottom:4px">💬 会话日志</div><div style="font-size:18px;font-weight:700;color:#a78bfa">23</div><div style="font-size:9px;color:var(--dim)">活跃会话 · 最近2分钟前</div></div>
+          <div class="stat-box"><div style="font-size:9px;color:var(--muted);margin-bottom:4px">📄 持久记忆</div><div style="font-size:11px;color:var(--muted)">SOUL.md 已加载 · MEMORY.md 457 条</div></div>
+        </div>
+      </div>
+      <div class="modal-body" id="mem-tab-kg" style="display:none">
+        <div style="padding:16px;background:var(--surface);border-radius:8px;border:1px solid var(--border)">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:10px">知识图谱可视化</div>
+          <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;min-height:60px;align-items:center">
+            <div style="display:flex;flex-direction:column;align-items:center"><div style="width:36px;height:36px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff">安</div><span style="font-size:8px;color:var(--muted)">安全</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center"><div style="width:36px;height:36px;border-radius:50%;background:var(--success);display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff">代</div><span style="font-size:8px;color:var(--muted)">代码</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center"><div style="width:36px;height:36px;border-radius:50%;background:#a78bfa;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff">前</div><span style="font-size:8px;color:var(--muted)">前端</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center"><div style="width:36px;height:36px;border-radius:50%;background:var(--warning);display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff">后</div><span style="font-size:8px;color:var(--muted)">后端</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center"><div style="width:36px;height:36px;border-radius:50%;background:var(--error);display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff">API</div><span style="font-size:8px;color:var(--muted)">API</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-body" id="mem-tab-myelin" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+          <div class="stat-box" style="text-align:center"><div style="font-size:8px;color:var(--muted)">学习阶段</div><div style="font-size:14px;font-weight:700;color:var(--muted)">120</div><div class="progress-bar"><div class="progress-fill" style="width:77%;background:var(--muted)"></div></div></div>
+          <div class="stat-box" style="text-align:center"><div style="font-size:8px;color:var(--muted)">固化阶段</div><div style="font-size:14px;font-weight:700;color:var(--warning)">28</div><div class="progress-bar"><div class="progress-fill" style="width:18%;background:var(--warning)"></div></div></div>
+          <div class="stat-box" style="text-align:center"><div style="font-size:8px;color:var(--muted)">本能阶段</div><div style="font-size:14px;font-weight:700;color:var(--success)">8</div><div class="progress-bar"><div class="progress-fill" style="width:5%;background:var(--success)"></div></div></div>
+        </div>
+        <div class="stat-box" style="display:flex;justify-content:space-around;text-align:center">
+          <div><div style="font-size:8px;color:var(--muted)">节省 LLM 调用</div><div style="font-size:13px;font-weight:700;color:var(--accent)">45 次</div></div>
+          <div><div style="font-size:8px;color:var(--muted)">节省 Token</div><div style="font-size:13px;font-weight:700;color:var(--success)">23,400</div></div>
+          <div><div style="font-size:8px;color:var(--muted)">缓存命中率</div><div style="font-size:13px;font-weight:700;color:var(--warning)">92.5%</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-settings">
+    <div class="modal-box" style="width:480px" onclick="event.stopPropagation()">
+      <div class="modal-header"><span>⚙️ 系统设置</span><button class="btn-icon" onclick="closeModal('modal-settings')">✕</button></div>
+      <div class="modal-body">
+        <div class="stat-box" style="margin-bottom:10px">
+          <div style="font-weight:600;font-size:11px;margin-bottom:8px">💓 心跳设置</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px"><span style="font-size:10px;color:var(--muted)">心跳间隔</span><input type="text" value="5" style="width:50px;text-align:center"><span style="font-size:9px;color:var(--dim)">秒</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px"><span style="font-size:10px;color:var(--muted)">空闲超时</span><input type="text" value="50" style="width:50px;text-align:center"><span style="font-size:9px;color:var(--dim)">秒</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:10px;color:var(--muted)">预判过滤</span><div class="toggle-switch on"><div class="toggle-knob"></div></div></div>
+        </div>
+        <div class="stat-box">
+          <div style="font-weight:600;font-size:11px;margin-bottom:6px">📁 存储路径</div>
+          <div style="font-size:10px;color:var(--muted)">数据目录: ~/.hermes/</div>
+          <div style="font-size:10px;color:var(--muted)">Neo4j: bolt://localhost:7687</div>
+          <div style="font-size:10px;color:var(--muted)">Qdrant: .memos/qdrant/</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Small Thought Bubble -->
+  <div class="small-thought" id="small-thought" style="display:none">
+    <div style="font-size:9px;color:var(--accent);margin-bottom:3px">💭 <span id="st-agent"></span> 的小心思</div>
+    <div style="font-size:10px;color:#c7cdd9;line-height:1.4" id="st-text"></div>
+    <div style="font-size:8px;color:var(--dim);margin-top:3px;text-align:right">置信度: 72%</div>
+  </div>
+</div>
+
+<script>
+// ===== DATA =====
+const agents = [
+  { id:'alice', name:'Alice', role:'程序员', color:'#a78bfa', model:'GPT-4o', online:true, satiety:75, bioCurrent:4, emotion:{v:0.7,a:0.3,d:0.5} },
+  { id:'bob', name:'Bob', role:'安全专家', color:'#60a5fa', model:'Claude 3.5', online:true, satiety:45, bioCurrent:7, emotion:{v:0.2,a:0.8,d:0.6} },
+  { id:'clio', name:'Clio', role:'设计师', color:'#f472b6', model:'GPT-4o', online:true, satiety:90, bioCurrent:2, emotion:{v:0.9,a:0.1,d:0.3} },
+  { id:'dave', name:'Dave', role:'运维', color:'#34d399', model:'Llama 3.2', online:false, satiety:60, bioCurrent:5, emotion:{v:0.4,a:0.5,d:0.4} },
+  { id:'eve', name:'Eve', role:'数据分析师', color:'#fbbf24', model:'Gemini Pro', online:true, satiety:82, bioCurrent:3, emotion:{v:0.6,a:0.4,d:0.5} },
+  { id:'frank', name:'Frank', role:'文案', color:'#fb923c', model:'GPT-4o', online:true, satiety:55, bioCurrent:6, emotion:{v:0.5,a:0.6,d:0.4} },
+];
+
+const positionPresets = [
+  {x:'25%',y:'30%'},{x:'52%',y:'22%'},{x:'72%',y:'48%'},{x:'38%',y:'62%'},{x:'60%',y:'70%'}
+];
+
+const chatMessages = [
+  {role:'user',text:'帮我分析一下这个项目的安全性',time:'10:25'},
+  {role:'thinking',text:'正在分析项目结构，检查依赖项...',time:'10:25'},
+  {role:'tool',text:'已扫描 127 个文件',toolName:'search_codebase',toolResult:'发现 3 个潜在安全问题',time:'10:25'},
+  {role:'assistant',text:'经过初步扫描，我发现以下安全问题：\n\n1. 依赖漏洞: lodash 版本过低\n2. XSS 风险: 用户输入未过滤\n3. 配置泄露: .env 被提交\n\n建议优先修复第 1 和第 2 项。',time:'10:26'},
+  {role:'user',text:'那先帮我修复 lodash 的依赖问题',time:'10:27'},
+  {role:'assistant',text:'好的，我来更新 lodash 到最新版本...',time:'10:27',streaming:true},
+];
+
+const modelList = [
+  {name:'GPT-4o',provider:'OpenAI',icon:'🔷',isDefault:true},
+  {name:'Claude 3.5 Sonnet',provider:'Anthropic',icon:'🧠',isDefault:false},
+  {name:'Llama 3.2',provider:'Ollama',icon:'🏠',isDefault:false},
+  {name:'Gemini Pro',provider:'Google',icon:'🔺',isDefault:false},
+  {name:'DeepSeek V3',provider:'DeepSeek',icon:'🔍',isDefault:false},
+];
+
+const channelList = [
+  {platform:'feishu',name:'飞书工作群',icon:'🐦',status:'connected',agent:'alice'},
+  {platform:'telegram',name:'Telegram Bot',icon:'✈️',status:'connected',agent:'bob'},
+  {platform:'discord',name:'Discord 服务器',icon:'🎮',status:'disconnected',agent:null},
+];
+
+const skillsData = [
+  {name:'Git 操作',desc:'代码版本管理与协作',cat:'开发工具',on:true},
+  {name:'Debug 助手',desc:'智能调试与错误分析',cat:'开发工具',on:true},
+  {name:'每日提醒',desc:'定时任务与日程提醒',cat:'日常辅助',on:true},
+  {name:'天气查询',desc:'实时天气信息获取',cat:'日常辅助',on:false},
+  {name:'安全审计',desc:'代码安全漏洞扫描',cat:'安全',on:true},
+  {name:'文件管理',desc:'智能文件整理与分类',cat:'日常辅助',on:true},
+];
+
+const plansData = [
+  {name:'安全审计',status:'active',progress:50,agent:'Alice',time:'10:25'},
+  {name:'性能优化',status:'pending',progress:0,agent:'Dave',time:'09:30'},
+  {name:'UI 重构',status:'done',progress:100,agent:'Clio',time:'昨天'},
+];
+
+let activeAgent = agents[0];
+let currentDockTab = 'agents';
+let editingAgentId = null;
+
+// ===== INIT =====
+function init() {
+  renderOfficeSprites();
+  renderChat();
+  updateEnergyDisplay();
+  setTimeout(showSmallThought, 6000);
+}
+
+function renderOfficeSprites() {
+  const canvas = document.getElementById('office-canvas');
+  // Remove existing sprites
+  document.querySelectorAll('.agent-sprite').forEach(el => el.remove());
+
+  agents.filter(a => a.online).forEach((agent, i) => {
+    const pos = positionPresets[i] || {x:'50%',y:'50%'};
+    const div = document.createElement('div');
+    div.className = 'agent-sprite' + (agent.id === activeAgent.id ? ' selected' : '');
+    div.style.left = pos.x; div.style.top = pos.y;
+    div.innerHTML = `
+      <div class="sprite-body" style="background:${agent.color}">${agent.name[0]}</div>
+      <span class="sprite-label">${agent.name}</span>
+    `;
+    div.onclick = () => selectAgent(agent);
+    canvas.appendChild(div);
+  });
+  document.getElementById('online-count').textContent = agents.filter(a=>a.online).length;
+}
+
+function selectAgent(agent) {
+  activeAgent = agent;
+  renderOfficeSprites();
+  renderChat();
+  updateEnergyDisplay();
+  document.getElementById('active-agent-avatar').style.background = agent.color;
+  document.getElementById('active-agent-avatar').textContent = agent.name[0];
+  document.getElementById('active-agent-name').textContent = agent.name;
+  document.getElementById('active-agent-meta').textContent = agent.role + ' · ' + agent.model;
+}
+
+function updateEnergyDisplay() {
+  const a = activeAgent;
+  document.getElementById('satiety-val').textContent = a.satiety + '%';
+  document.getElementById('satiety-bar').style.width = a.satiety + '%';
+  document.getElementById('satiety-bar').style.background = a.satiety < 30
+    ? 'linear-gradient(90deg,#fbbf24,#ef4444)'
+    : a.satiety < 60
+    ? 'linear-gradient(90deg,#22c55e,#fbbf24)'
+    : 'linear-gradient(90deg,#22c55e,#4ade80)';
+  document.getElementById('bio-val').textContent = a.bioCurrent + '/10' + (a.bioCurrent > 8 ? ' ⚡电涌' : '');
+  document.getElementById('bio-bar').style.width = (a.bioCurrent * 10) + '%';
+  document.getElementById('bio-bar').style.background = a.bioCurrent > 8
+    ? 'linear-gradient(90deg,#f59e0b,#ef4444)'
+    : a.bioCurrent > 5
+    ? 'linear-gradient(90deg,#3b82f6,#f59e0b)'
+    : 'linear-gradient(90deg,#3b82f6,#60a5fa)';
+  const e = a.emotion;
+  document.getElementById('emo-v').style.background = e.v > 0.3 ? '#22c55e' : e.v < -0.3 ? '#ef4444' : '#fbbf24';
+  document.getElementById('emo-v').title = 'Valence: ' + e.v.toFixed(1);
+  document.getElementById('emo-a').style.background = e.a > 0.5 ? '#f59e0b' : '#3b82f6';
+  document.getElementById('emo-a').title = 'Arousal: ' + e.a.toFixed(1);
+  document.getElementById('emo-d').style.background = e.d > 0.5 ? '#8b5cf6' : '#5b8cff';
+  document.getElementById('emo-d').title = 'Dominance: ' + e.d.toFixed(1);
+}
+
+function renderChat() {
+  const container = document.getElementById('chat-messages');
+  let html = '';
+  chatMessages.forEach(msg => {
+    if (msg.role === 'user') {
+      html += `<div class="chat-bubble user"><div class="bubble-body user">${msg.text}<div class="bubble-time" style="justify-content:flex-end">${msg.time}</div></div></div>`;
+    } else if (msg.role === 'assistant') {
+      html += `<div class="chat-bubble assistant">
+        <div class="chat-avatar" style="background:${activeAgent.color}">${activeAgent.name[0]}</div>
+        <div class="bubble-body assistant">${msg.text}${msg.streaming?'<span class="cursor-blink">█</span>':''}<div class="bubble-time"><span>${activeAgent.name}</span><span>${msg.time}</span></div></div>
+      </div>`;
+    } else if (msg.role === 'thinking') {
+      html += `<div class="thinking-block">💭 ${msg.text}<span style="animation:blink 1.5s ease-in-out infinite"> ...</span></div>`;
+    } else if (msg.role === 'tool') {
+      html += `<div class="tool-block"><div style="color:var(--warning);margin-bottom:2px">🔧 调用工具: ${msg.toolName}</div><div style="color:var(--muted)">${msg.text}</div>${msg.toolResult?`<div style="color:var(--success);margin-top:2px">✓ ${msg.toolResult}</div>`:''}</div>`;
+    }
+  });
+  // Thinking indicator
+  html += `<div style="display:flex;gap:8px;align-items:center;padding:6px 0;margin-left:2px">
+    <div class="chat-avatar" style="background:${activeAgent.color}">${activeAgent.name[0]}</div>
+    <span style="font-size:10px;color:var(--dim)">思考中</span>
+    <span style="width:4px;height:4px;border-radius:50%;background:var(--accent);animation:blink 1.5s ease-in-out infinite"></span>
+    <span style="width:4px;height:4px;border-radius:50%;background:var(--accent);animation:blink 1.5s ease-in-out 0.2s infinite"></span>
+    <span style="width:4px;height:4px;border-radius:50%;background:var(--accent);animation:blink 1.5s ease-in-out 0.4s infinite"></span>
+  </div>`;
+  container.innerHTML = html;
+  container.scrollTop = container.scrollHeight;
+}
+
+function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  const now = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+  chatMessages.push({role:'user',text,time:now});
+  input.value = '';
+  renderChat();
+  setTimeout(() => {
+    chatMessages.push({role:'assistant',text:'收到，我来处理...',time:new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}),streaming:true});
+    renderChat();
+    setTimeout(() => {
+      const last = chatMessages[chatMessages.length-1];
+      last.text = '已经为你生成了分析报告。需要我详细展开哪个部分？';
+      last.streaming = false;
+      renderChat();
+    }, 2000);
+  }, 500);
+}
+
+// ===== DOCK PANEL =====
+function toggleDock(tab, btn) {
+  const dock = document.getElementById('dock-overlay');
+  if (dock.classList.contains('open') && currentDockTab === tab) {
+    dock.classList.remove('open');
+    document.querySelectorAll('#status-bar .menu-btn').forEach(b => b.classList.remove('active'));
+    return;
+  }
+  currentDockTab = tab;
+  dock.classList.add('open');
+  document.querySelectorAll('#status-bar .menu-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  setDockTab(tab, document.querySelector(`#dock-tabs .dock-tab[onclick*="${tab}"]`));
+}
+
+function setDockTab(tab, btn) {
+  currentDockTab = tab;
+  document.querySelectorAll('#dock-tabs .dock-tab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const content = document.getElementById('dock-content');
+  content.classList.add('show');
+  content.className = 'show';
+  if (tab === 'skills') content.className = 'show';
+  else content.className = 'show dock-grid';
+
+  let html = '';
+  switch(tab) {
+    case 'agents':
+      html = agents.map(a => `
+        <div class="agent-card${a.id===activeAgent.id?' selected':''}" onclick="${a.id===activeAgent.id?"":'selectAgent(agents.find(x=>x.id===\''+a.id+'\'))'}">
+          <div class="mini-avatar" style="background:${a.color}">${a.name[0]}</div>
+          <div style="font-size:10px;font-weight:600">${a.name}</div>
+          <div style="font-size:9px;color:var(--muted)">${a.role}</div>
+          <span class="status-dot ${a.online?'online':'offline'}"></span>
+          <select style="width:100%;font-size:8px;background:var(--surface);border:1px solid var(--border);color:var(--muted);border-radius:3px;padding:1px 3px;text-align:center" onclick="event.stopPropagation()">
+            <option ${a.model==='GPT-4o'?'selected':''}>GPT-4o</option>
+            <option ${a.model==='Claude 3.5'?'selected':''}>Claude 3.5</option>
+            <option ${a.model==='Llama 3.2'?'selected':''}>Llama 3.2</option>
+          </select>
+          <button class="btn" style="font-size:8px;padding:1px 5px" onclick="event.stopPropagation();editAgent('${a.id}')">编辑</button>
+        </div>`).join('') + `<div class="agent-card" style="justify-content:center;cursor:pointer"><span style="font-size:20px;color:var(--accent)">+</span></div>`;
+      break;
+    case 'tasks':
+      html = plansData.map(p => `
+        <div class="dock-card" style="min-width:150px">
+          <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px">
+            <span class="status-dot ${p.status==='active'?'online':p.status==='done'?'online':''}" style="background:${p.status==='active'?'var(--warning)':p.status==='done'?'var(--success)':'var(--muted)'}"></span>
+            <span style="font-size:10px;font-weight:600">${p.name}</span>
+          </div>
+          <div style="font-size:9px;color:var(--muted);margin-bottom:4px">${p.agent} · ${p.time}</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${p.progress}%;background:${p.status==='done'?'var(--success)':'var(--accent)'}"></div></div>
+          <div style="font-size:8px;color:var(--dim);margin-top:2px">${p.progress}%</div>
+        </div>`).join('');
+      break;
+    case 'channels':
+      html = channelList.map(c => `
+        <div class="dock-card" style="min-width:140px">
+          <div style="font-size:18px;margin-bottom:3px">${c.icon}</div>
+          <div style="font-size:10px;font-weight:600">${c.name}</div>
+          <div style="font-size:9px;color:var(--muted)">${c.platform}</div>
+          <div style="display:flex;align-items:center;gap:3px;margin-top:4px">
+            <span class="status-dot ${c.status==='connected'?'online':'offline'}"></span>
+            <span style="font-size:9px;color:var(--muted)">${c.status==='connected'?'已连接':'未连接'}</span>
+          </div>
+          ${c.agent?`<div style="font-size:8px;color:var(--accent);margin-top:3px">绑定: ${c.agent}</div>`:''}
+        </div>`).join('');
+      break;
+    case 'models':
+      html = modelList.map(m => `
+        <div class="dock-card" style="min-width:130px">
+          <div style="font-size:13px;margin-bottom:3px">${m.icon}</div>
+          <div style="font-size:10px;font-weight:600">${m.name}</div>
+          <div style="font-size:9px;color:var(--muted)">${m.provider}</div>
+          ${m.isDefault?'<div style="font-size:8px;color:var(--success);margin-top:3px">⭐ 默认</div>':''}
+          <button class="btn" style="font-size:8px;padding:1px 5px;margin-top:4px;width:100%" onclick="showModelModal()">编辑</button>
+        </div>`).join('') + `<div class="dock-card" style="justify-content:center;cursor:pointer"><span style="font-size:20px;color:var(--accent)">+</span></div>`;
+      break;
+    case 'skills':
+      content.className = 'show';
+      content.style.display = 'flex';
+      content.style.height = '100%';
+      html = `
+        <div style="display:flex;height:100%;width:100%;gap:0">
+          <div style="width:90px;border-right:1px solid var(--border);padding:3px 0;overflow:auto;flex-shrink:0">
+            ${agents.slice(0,4).map(a => `
+              <div style="padding:5px 8px;font-size:10px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:5px">
+                <div style="width:16px;height:16px;border-radius:3px;background:${a.color};display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff">${a.name[0]}</div>${a.name}
+              </div>`).join('')}
+          </div>
+          <div style="flex:1;padding:0 10px;overflow:auto">
+            ${['开发工具','日常辅助','安全'].map(cat => `
+              <div style="margin-bottom:10px">
+                <div style="font-size:9px;color:var(--dim);text-transform:uppercase;margin-bottom:5px;font-weight:600">${cat}</div>
+                ${skillsData.filter(s=>s.cat===cat).map(s => `
+                  <div class="skill-row">
+                    <div><div style="font-size:10px;font-weight:500">${s.name}</div><div style="font-size:9px;color:var(--muted)">${s.desc}</div></div>
+                    <div class="toggle-switch ${s.on?'on':'off'}"><div class="toggle-knob"></div></div>
+                  </div>`).join('')}
+              </div>`).join('')}
+          </div>
+        </div>`;
+      break;
+    case 'memory':
+      html = agents.map(a => `
+        <div class="agent-card" onclick="showMemoryModal('${a.id}')">
+          <div class="mini-avatar" style="background:${a.color}">${a.name[0]}</div>
+          <div style="font-size:10px;font-weight:600">${a.name}</div>
+          <div style="font-size:9px;color:var(--muted)">${a.role}</div>
+          <button class="btn" style="font-size:8px;padding:1px 5px;margin-top:3px">查看记忆</button>
+        </div>`).join('');
+      break;
+  }
+  content.innerHTML = html;
+}
+
+// ===== PANEL TOGGLE =====
+function toggleLeftPanel() {
+  const panel = document.getElementById('left-panel');
+  panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+}
+function toggleRightPanel() {
+  const panel = document.getElementById('right-panel');
+  panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+}
+
+// ===== MODALS =====
+function showModal(id) {
+  document.getElementById(id).classList.add('show');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+function editAgent(id) {
+  editingAgentId = id;
+  const a = agents.find(x => x.id === id);
+  document.getElementById('edit-agent-name').textContent = a.name;
+  document.getElementById('af-name').value = a.name;
+  document.getElementById('af-role').value = a.role;
+  renderAvatarPicker();
+  showModal('modal-agent');
+}
+function renderAvatarPicker() {
+  const picker = document.getElementById('avatar-picker');
+  picker.innerHTML = agents.map(a => `
+    <div style="aspect-ratio:2/3;background:${a.color};border-radius:3px;cursor:pointer;border:2px solid ${a.id===editingAgentId?'var(--accent)':'transparent'};display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff">${a.name[0]}</div>
+  `).join('');
+}
+function switchAgentTab(tab, btn) {
+  document.querySelectorAll('#modal-agent .modal-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('agent-form-persona').style.display = tab === 'persona' ? 'block' : 'none';
+  document.getElementById('agent-form-role').style.display = tab === 'role' ? 'block' : 'none';
+}
+function showModelModal() { showModal('modal-model'); }
+function showMemoryModal(agentId) {
+  const a = agents.find(x => x.id === agentId);
+  document.getElementById('mem-agent-name').textContent = a.name;
+  showModal('modal-memory');
+}
+function switchMemTab(tab, btn) {
+  document.querySelectorAll('#modal-memory .modal-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('mem-tab-dual').style.display = tab === 'dual' ? 'block' : 'none';
+  document.getElementById('mem-tab-kg').style.display = tab === 'kg' ? 'block' : 'none';
+  document.getElementById('mem-tab-myelin').style.display = tab === 'myelin' ? 'block' : 'none';
+}
+function showSettings() { showModal('modal-settings'); }
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('show');
+  });
+});
+
+// ===== SMALL THOUGHT =====
+function showSmallThought() {
+  const bubble = document.getElementById('small-thought');
+  document.getElementById('st-agent').textContent = 'Eve';
+  document.getElementById('st-text').textContent = '我觉得主人可能还需要一份数据趋势分析报告，最近的项目数据变化很大...';
+  bubble.style.display = 'block';
+  setTimeout(() => { bubble.style.display = 'none'; }, 6000);
+}
+
+// ===== INIT =====
+window.onload = init;
+document.getElementById('active-agent-avatar').style.background = activeAgent.color;
+document.getElementById('active-agent-avatar').textContent = activeAgent.name[0];
+document.getElementById('active-agent-name').textContent = activeAgent.name;
+document.getElementById('active-agent-meta').textContent = activeAgent.role + ' · ' + activeAgent.model;
+</script>
+
+</body>
+</html>

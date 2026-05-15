@@ -1,0 +1,117 @@
+/* ============================================================
+   ProcessPanel Component Styles
+   ============================================================ */
+
+/* --- Process row --- */
+.ppro-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.ppro-row:last-child {
+  border-bottom: none;
+}
+
+/* --- Row header --- */
+.ppro-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ppro-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ppro-status-dot--done    { background: #22c55e; }
+.ppro-status-dot--error   { background: #ef4444; }
+.ppro-status-dot--active  { background: #5b8cff; }
+.ppro-status-dot--pending { background: #475569; }
+
+.ppro-title {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ppro-time {
+  font-size: 9px;
+  color: var(--color-text-dim);
+  flex-shrink: 0;
+}
+
+/* --- Row body --- */
+.ppro-body {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  padding-left: 15px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-family: var(--font-mono);
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+/* --- Tool calls --- */
+.ppro-tool-calls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 15px;
+  margin-top: 4px;
+}
+
+.ppro-tool-call {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+}
+
+.ppro-tool-name {
+  color: var(--color-accent);
+  font-weight: 500;
+}
+
+.ppro-tool-input {
+  padding: 4px 8px;
+  background: rgba(91, 140, 255, 0.06);
+  border-radius: 4px;
+  border: 1px solid rgba(91, 140, 255, 0.15);
+  margin-top: 2px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.ppro-tool-progress {
+  padding: 2px 6px;
+  background: rgba(251, 191, 36, 0.08);
+  border-radius: 4px;
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  margin-top: 2px;
+  color: #fbbf24;
+  white-space: pre-wrap;
+}
+
+.ppro-tool-result {
+  padding: 4px 8px;
+  background: rgba(34, 197, 94, 0.06);
+  border-radius: 4px;
+  border: 1px solid rgba(34, 197, 94, 0.15);
+  margin-top: 2px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 200px;
+  overflow-y: auto;
+}

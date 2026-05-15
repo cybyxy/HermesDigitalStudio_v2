@@ -1,0 +1,413 @@
+/* ============================================================
+   PlanTimeline Component Styles
+   ============================================================ */
+
+/* 时间线区域高度随左栏剩余空间固定，步骤多时在容器内滚动 */
+#plan-timeline-host {
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+#plan-timeline-host::-webkit-scrollbar {
+  width: 6px;
+}
+
+#plan-timeline-host::-webkit-scrollbar-thumb {
+  background: rgba(107, 122, 146, 0.45);
+  border-radius: 3px;
+}
+
+#plan-timeline-host::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* --- Plan header (planner + collaborators) --- */
+.pt-plan-header {
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  padding-bottom: 10px;
+}
+
+.pt-plan-header__name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+  padding: 0 2px;
+}
+
+.pt-plan-header__agents-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+
+.pt-plan-header__agent-chip {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(91, 140, 255, 0.15);
+  border: 1px solid rgba(91, 140, 255, 0.3);
+  color: #8badeb;
+  white-space: nowrap;
+}
+
+.pt-plan-header__agent-chip--planner {
+  background: rgba(167, 243, 208, 0.1);
+  border-color: rgba(74, 222, 128, 0.25);
+  color: #86efac;
+}
+
+.pt-plan-header__agent-chip--collab {
+  background: rgba(251, 191, 36, 0.08);
+  border-color: rgba(251, 191, 36, 0.2);
+  color: #fcd34d;
+}
+
+/* --- Step executor tag in badge row --- */
+.pt-agent-tag {
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(91, 140, 255, 0.18);
+  border: 1px solid rgba(91, 140, 255, 0.3);
+  color: #93b4f5;
+  margin-left: 4px;
+  white-space: nowrap;
+}
+
+/* --- Empty state --- */
+.pt-empty {
+  font-size: 11px;
+  color: var(--color-text-dim);
+  line-height: 1.55;
+  padding: 8px 0;
+}
+
+/* --- Plan summary banner --- */
+.pt-summary {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  background: var(--color-accent-bg);
+  border-radius: 6px;
+  border: 1px solid var(--color-accent-border);
+}
+
+/* --- Timeline step row --- */
+.pt-step-row {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+/* Dynamic padding-bottom handled via inline style */
+
+/* --- Timeline rail (dot + connector) --- */
+.pt-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 12px;
+  flex-shrink: 0;
+}
+
+.pt-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px rgba(20, 24, 32, 0.95);
+}
+
+.pt-dot--done   { background: #22c55e; }
+.pt-dot--active { background: #5b8cff; }
+.pt-dot--pending{ background: #475569; }
+
+.pt-connector {
+  flex: 1;
+  min-height: 20px;
+  width: 2px;
+  margin-top: 3px;
+  background: rgba(107, 122, 146, 0.45);
+  border-radius: 1px;
+}
+
+/* --- Step body content --- */
+.pt-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.pt-head {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pt-status-tag {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #0c0e12;
+}
+
+.pt-status-tag--done   { background: #22c55e; }
+.pt-status-tag--active { background: #5b8cff; }
+.pt-status-tag--pending{ background: #475569; }
+
+.pt-action {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  line-height: 1.45;
+  margin-top: 2px;
+}
+
+.pt-filepath {
+  font-size: 10px;
+  color: var(--color-text-dim);
+  margin-top: 4px;
+  font-family: var(--font-mono);
+}
+
+/* --- Badge row --- */
+.pt-badge {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.pt-conf-tag {
+  font-size: 9px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-weight: 600;
+  color: #0c0e12;
+}
+
+.pt-conf--high   { background: #4ade80; }
+.pt-conf--medium { background: #fbbf24; }
+.pt-conf--low   { background: #94a3b8; }
+
+/* --- Clickable row --- */
+.pt-step-row--clickable {
+  cursor: pointer;
+}
+
+/* ============================================================
+   Step Result Popup (non-modal floating)
+   ============================================================ */
+
+.step-result-popup {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  z-index: 10000;
+  background: #1e2433;
+  border: 1px solid rgba(91, 140, 255, 0.3);
+  border-radius: 12px;
+  width: 420px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+.step-result-popup__header {
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  cursor: move;
+  user-select: none;
+  gap: 8px;
+}
+
+.step-result-popup__title-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.step-result-popup__title {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.step-result-popup__meta {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  line-height: 1.45;
+}
+
+.step-result-popup__meta-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.step-result-popup__meta-k {
+  flex-shrink: 0;
+  color: var(--color-text-dim, #64748b);
+  font-weight: 600;
+}
+
+.step-result-popup__meta-k::after {
+  content: '：';
+}
+
+.step-result-popup__meta-v {
+  min-width: 0;
+  color: var(--color-text-secondary);
+  word-break: break-word;
+}
+
+.step-result-popup__close {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.step-result-popup__content {
+  padding: 16px;
+  overflow-y: auto;
+  flex: 1;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 500px;
+}
+
+.step-result-popup__content--loading,
+.step-result-popup__content--empty {
+  color: var(--color-text-dim);
+}
+
+.step-result-popup__content--error {
+  color: var(--color-error);
+}
+
+.step-result-popup__content--loaded {
+  color: var(--color-text-secondary);
+}
+
+/* ============================================================
+   Deliverables Section
+   ============================================================ */
+
+/* --- Shared deliverable item --- */
+.deliv-item {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  flex: 1;
+  overflow: hidden;
+}
+
+.deliv-item__icon {
+  flex-shrink: 0;
+}
+
+.deliv-item__path {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.deliv-item:hover {
+  background: var(--color-accent-bg);
+}
+
+/* --- Notes section --- */
+.deliv-notes {
+  margin-top: 16px;
+  padding: 12px;
+  background: rgba(91, 140, 255, 0.08);
+  border-radius: 8px;
+  border: 1px solid rgba(91, 140, 255, 0.2);
+}
+
+.deliv-notes__title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-accent);
+  margin-bottom: 8px;
+}
+
+.deliv-notes__text {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.deliv-notes__text--list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  white-space: normal;
+}
+
+.deliv-notes__text--list .deliv-item {
+  margin: 0;
+}
+
+/* --- Files section (legacy class, 文件区块已改用 deliv-notes) --- */
+.deliv-files {
+  margin-top: 12px;
+}
+
+.deliv-section-title {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.deliv-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.deliv-empty {
+  font-size: 11px;
+  color: var(--color-text-dim);
+  padding: 2px 4px;
+}
+
+/* --- Dirs section --- */
+.deliv-dirs {
+  margin-top: 12px;
+}

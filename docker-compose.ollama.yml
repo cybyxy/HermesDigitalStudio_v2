@@ -1,0 +1,44 @@
+version: "3.8"
+
+# Hermes Digital Studio — 本地模型运行环境 (Ollama)
+# 启动: docker compose -f docker-compose.ollama.yml up -d
+# 支持 GPU 加速 (nvidia)，无 GPU 也可 CPU 运行
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: hermes-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_KEEP_ALIVE=24h
+      - OLLAMA_HOST=0.0.0.0
+    restart: unless-stopped
+    # GPU 支持（有 NVIDIA GPU 时取消注释）
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+  # 可选：Open WebUI 提供本地聊天界面
+  # open-webui:
+  #   image: ghcr.io/open-webui/open-webui:main
+  #   container_name: hermes-open-webui
+  #   ports:
+  #     - "3000:8080"
+  #   volumes:
+  #     - open_webui_data:/app/backend/data
+  #   environment:
+  #     - OLLAMA_BASE_URL=http://ollama:11434
+  #   depends_on:
+  #     - ollama
+  #   restart: unless-stopped
+
+volumes:
+  ollama_data:
+  # open_webui_data:

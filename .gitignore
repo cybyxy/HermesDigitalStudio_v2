@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+
+# Virtual environment
+backend/.venv/
+venv/
+.venv/
+
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+prototype/node_modules/
+
+# Data & State
+.memos/
+backend/data/
+backend/logs/
+*.db
+*.db-journal
+*.db-wal
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment & Secrets
+.env
+*.env.local
+*.env.production
+
+# Docker
+docker-compose.override.yml
+
+# Qoder
+.qoder/
+
+# Large model files (download separately)
+backend/models/
+
+# Large screenshots
+screenshot_*.png
+
+# Misc
+*.log

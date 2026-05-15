@@ -1,0 +1,167 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 25% 6%;
+    --foreground: 220 15% 92%;
+    --card: 220 20% 10%;
+    --card-foreground: 220 15% 92%;
+    --popover: 220 20% 10%;
+    --popover-foreground: 220 15% 92%;
+    --primary: 220 80% 65%;
+    --primary-foreground: 220 20% 6%;
+    --secondary: 220 18% 16%;
+    --secondary-foreground: 220 15% 92%;
+    --muted: 220 18% 16%;
+    --muted-foreground: 220 12% 55%;
+    --accent: 220 18% 16%;
+    --accent-foreground: 220 15% 92%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 220 15% 92%;
+    --border: 220 16% 20%;
+    --input: 220 16% 20%;
+    --ring: 220 80% 65%;
+    --radius: 0.5rem;
+
+    /* Hermes specific tokens */
+    --hermes-bg: #0c0e12;
+    --hermes-panel: #141820;
+    --hermes-surface: #1e2433;
+    --hermes-border: #2a3140;
+    --hermes-text: #e8eaef;
+    --hermes-muted: #8b93a7;
+    --hermes-accent: #5b8cff;
+    --hermes-success: #22c55e;
+    --hermes-warning: #fbbf24;
+    --hermes-error: #ef4444;
+    --hermes-chat-user: #1e3a5f;
+    --hermes-chat-assistant: #1e2433;
+
+    /* Gradients */
+    --gradient-panel: linear-gradient(180deg, #141820 0%, #0c0e12 100%);
+    --gradient-energy-satiety: linear-gradient(90deg, #22c55e 0%, #fbbf24 50%, #ef4444 100%);
+    --gradient-energy-current: linear-gradient(90deg, #3b82f6 0%, #f59e0b 70%, #ef4444 100%);
+    --gradient-accent-glow: linear-gradient(135deg, #5b8cff 0%, #8b5cf6 100%);
+
+    /* Shadows */
+    --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --shadow-modal: 0 8px 32px rgba(0, 0, 0, 0.5);
+    --shadow-glow: 0 0 20px rgba(91, 140, 255, 0.15);
+
+    /* Transitions */
+    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dark {
+    --background: 220 25% 6%;
+    --foreground: 220 15% 92%;
+    --card: 220 20% 10%;
+    --card-foreground: 220 15% 92%;
+    --popover: 220 20% 10%;
+    --popover-foreground: 220 15% 92%;
+    --primary: 220 80% 65%;
+    --primary-foreground: 220 20% 6%;
+    --secondary: 220 18% 16%;
+    --secondary-foreground: 220 15% 92%;
+    --muted: 220 18% 16%;
+    --muted-foreground: 220 12% 55%;
+    --accent: 220 18% 16%;
+    --accent-foreground: 220 15% 92%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 220 15% 92%;
+    --border: 220 16% 20%;
+    --input: 220 16% 20%;
+    --ring: 220 80% 65%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 12px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--hermes-border);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--hermes-muted);
+  }
+}
+
+/* Glass morphism utility */
+@layer components {
+  .glass-panel {
+    background: rgba(20, 24, 32, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(42, 49, 64, 0.6);
+  }
+
+  .glass-card {
+    background: rgba(30, 36, 51, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(42, 49, 64, 0.4);
+    border-radius: 8px;
+    transition: all var(--transition-fast);
+  }
+
+  .glass-card:hover {
+    border-color: rgba(91, 140, 255, 0.3);
+    box-shadow: var(--shadow-glow);
+  }
+
+  /* Agent sprite placeholder */
+  .pixel-avatar {
+    image-rendering: pixelated;
+    border-radius: 4px;
+    box-shadow: 0 0 0 1px var(--hermes-border);
+  }
+
+  /* Chat bubble styles */
+  .bubble-user {
+    background: var(--hermes-chat-user);
+    border-radius: 12px 12px 2px 12px;
+  }
+
+  .bubble-assistant {
+    background: var(--hermes-chat-assistant);
+    border: 1px solid var(--hermes-border);
+    border-radius: 12px 12px 12px 2px;
+  }
+
+  /* Energy bar */
+  .energy-bar {
+    height: 4px;
+    border-radius: 2px;
+    transition: all var(--transition-smooth);
+  }
+
+  /* Status dot */
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  .status-dot.online { background: var(--hermes-success); box-shadow: 0 0 4px var(--hermes-success); }
+  .status-dot.busy { background: var(--hermes-warning); box-shadow: 0 0 4px var(--hermes-warning); }
+  .status-dot.offline { background: var(--hermes-muted); }
+}

@@ -1,0 +1,283 @@
+/* ============================================================
+   SkillList Component Styles
+   ============================================================ */
+
+/* --- Flex wrapper: tab bar fixed left, content scrolls on right --- */
+.skill-list-wrapper {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  align-items: stretch;
+}
+
+/* Outer panel does not scroll — only .skill-content scrolls */
+.dock-panel__scroll:has(.skill-list-wrapper) {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Positioning root for the refresh button */
+.dock-panel__scroll {
+  position: relative;
+}
+
+/* --- Tab bar --- */
+.skill-tab-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 8px 0 0;
+  border-right: 1px solid #2a3140;
+  border-bottom: none;
+  margin-bottom: 0;
+  margin-right: 8px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  min-width: 90px;
+  max-width: 120px;
+  width: 120px;
+  min-height: 0;
+}
+.skill-tab-bar::-webkit-scrollbar { display: none; }
+
+/* --- Tab button --- */
+.skill-tab {
+  padding: 5px 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-right: none;
+  border-radius: 6px 0 0 6px;
+  color: #6b7a92;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-align: left;
+}
+
+.skill-tab:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: #c8cdd9;
+}
+
+.skill-tab.active {
+  background: rgba(91, 140, 255, 0.1);
+  border-color: rgba(91, 140, 255, 0.35);
+  border-right-color: rgba(20, 24, 32, 0.85);
+  color: #e8eaef;
+  font-weight: 600;
+}
+
+/* --- Content area --- */
+.skill-content {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  /* 仅右侧为「刷新列表」留空；顶部不占位，按钮绝对定位浮在内容上 */
+  padding: 4px 88px 4px 4px;
+}
+
+.skill-list-hint {
+  font-size: 11px;
+  color: #6b7a92;
+  padding: 4px 0 8px;
+  text-align: center;
+}
+
+/* Empty state: hint is sole child of wrapper, clear fixed refresh button */
+.skill-list-wrapper > .skill-list-hint:only-child {
+  padding: 4px 88px 12px 12px;
+  text-align: left;
+}
+
+/* --- Skill list --- */
+.skill-list-table {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+}
+
+/* --- Category group --- */
+.skill-category {
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.skill-category__summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  transition: background 0.15s;
+  font-size: 12px;
+  color: #c8cdd9;
+}
+.skill-category__summary::-webkit-details-marker { display: none; }
+.skill-category__summary:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.skill-category__chevron {
+  font-size: 9px;
+  color: #6b7a92;
+  transition: transform 0.15s;
+  flex-shrink: 0;
+}
+details[open] .skill-category__chevron {
+  transform: rotate(90deg);
+}
+
+.skill-category__name {
+  font-weight: 600;
+  color: #c8cdd9;
+}
+
+.skill-category__count {
+  font-size: 11px;
+  color: #6b7a92;
+}
+
+.skill-category__body {
+  padding: 3px 0 4px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* --- Skill row --- */
+.skill-row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.02);
+}
+.skill-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(91, 140, 255, 0.2);
+}
+
+/* --- Row icon --- */
+.skill-row__icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  background: #1e2433;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* --- Row info section --- */
+.skill-row__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+/* --- Row name --- */
+.skill-row__name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #c8cdd9;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- Row description --- */
+.skill-row__desc {
+  font-size: 11px;
+  color: #9aa3b2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- Row metadata --- */
+.skill-row__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.skill-row__meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+}
+
+.skill-row__meta-label {
+  color: #6b7a92;
+}
+
+.skill-row__meta-value {
+  color: #8b93a7;
+  background: rgba(91, 140, 255, 0.08);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+/* --- Row path --- */
+.skill-row__path {
+  font-size: 10px;
+  color: #7a8799;
+  font-family: 'Courier New', monospace;
+  flex-shrink: 0;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  align-self: center;
+}
+
+/* --- Refresh button --- */
+.skill-list-refresh-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  margin: 0;
+  width: max-content;
+  padding: 5px 12px;
+  background: rgba(91, 140, 255, 0.12);
+  border: 1px solid rgba(91, 140, 255, 0.25);
+  border-radius: 6px;
+  color: #8b93a7;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  z-index: 4;
+}
+
+.skill-list-refresh-btn:hover {
+  background: rgba(91, 140, 255, 0.25);
+  color: #e8eaef;
+}

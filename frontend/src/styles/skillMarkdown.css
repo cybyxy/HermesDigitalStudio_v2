@@ -1,0 +1,108 @@
+/* ============================================================
+   Markdown Preview Styles (used in SkillEditForm)
+   ============================================================ */
+
+.skill-markdown-preview h1.md-h1,
+.skill-markdown-preview h2.md-h2,
+.skill-markdown-preview h3.md-h3 {
+  margin: 0 0 12px 0;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.skill-markdown-preview h1.md-h1 {
+  font-size: 18px;
+  color: #e8eaef;
+  border-bottom: 1px solid #2a3140;
+  padding-bottom: 8px;
+}
+
+.skill-markdown-preview h2.md-h2 {
+  font-size: 15px;
+  color: #d0d4de;
+}
+
+.skill-markdown-preview h3.md-h3 {
+  font-size: 13px;
+  color: #c8cdd9;
+}
+
+.skill-markdown-preview p.md-p {
+  margin: 0 0 10px 0;
+  line-height: 1.6;
+}
+
+.skill-markdown-preview p.md-p:last-child {
+  margin-bottom: 0;
+}
+
+.skill-markdown-preview strong {
+  font-weight: 600;
+  color: #e8eaef;
+}
+
+.skill-markdown-preview em {
+  font-style: italic;
+  color: #b8bcc8;
+}
+
+.skill-markdown-preview a.md-link {
+  color: #5b8cff;
+  text-decoration: none;
+}
+
+.skill-markdown-preview a.md-link:hover {
+  text-decoration: underline;
+}
+
+.skill-markdown-preview ul.md-ul {
+  margin: 0 0 12px 0;
+  padding-left: 20px;
+  list-style-type: disc;
+}
+
+.skill-markdown-preview li.md-li {
+  margin-bottom: 4px;
+  line-height: 1.5;
+}
+
+.skill-markdown-preview blockquote.md-blockquote {
+  margin: 0 0 12px 0;
+  padding: 8px 12px;
+  border-left: 3px solid #5b8cff;
+  background: rgba(91, 140, 255, 0.08);
+  border-radius: 0 4px 4px 0;
+  color: #9aa3b2;
+  font-style: italic;
+}
+
+.skill-markdown-preview pre.md-code-block {
+  margin: 0 0 12px 0;
+  padding: 12px;
+  background: #0a0d12;
+  border: 1px solid #2a3140;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+
+.skill-markdown-preview code.md-code {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  color: #a8b8d0;
+  line-height: 1.5;
+}
+
+.skill-markdown-preview code.md-inline-code {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  background: rgba(91, 140, 255, 0.1);
+  color: #8bb8ff;
+  padding: 2px 5px;
+  border-radius: 3px;
+}
+
+.skill-markdown-preview hr.md-hr {
+  border: none;
+  border-top: 1px solid #2a3140;
+  margin: 16px 0;
+}
