@@ -25,9 +25,9 @@ gateway:
 
 # ── Neo4j 图数据库 ─────────────────────────────────────────────────────
 neo4j:
-  # uri: "bolt://localhost:7687"
-  # user: "neo4j"
-  # password: "bobo1234"
+  uri: "bolt://localhost:7687"
+  user: "neo4j"
+  password: "bobo1234"
 
 # ── 心跳推理循环 ──────────────────────────────────────────────────────
 heartbeat:
@@ -50,11 +50,11 @@ heartbeat:
 mind:
   # DNA 引擎
   dna:
-    # default_length: 128         # 默认 DNA 长度
-    # promoter_weight: 0.40       # Promoter 区权重
-    # exon_weight: 0.45           # Exon 区权重
-    # max_mutation_ratio: 0.15    # 最大变异比例
-    # potential_per_interaction: 0.0001  # 每次交互累积潜力
+    default_length: 128         # 默认 DNA 长度
+    promoter_weight: 0.40       # Promoter 区权重
+    exon_weight: 0.45           # Exon 区权重
+    max_mutation_ratio: 0.15    # 最大变异比例
+    potential_per_interaction: 0.0001  # 每次交互累积潜力
 
   # 神经电流
   neural:
@@ -65,15 +65,15 @@ mind:
 
   # 情绪蓄水池
   emotion:
-    # inertia_rate: 0.15          # 指数平滑率
-    # burst_threshold: 0.30       # 缓冲区爆发阈值
-    # homeostasis_rate: 0.01      # 稳态回归率
+    inertia_rate: 0.15          # 指数平滑率
+    burst_threshold: 0.30       # 缓冲区爆发阈值
+    homeostasis_rate: 0.01      # 稳态回归率
 
   # 冷却缓冲区
   cooling:
-    # refractory_threshold: 0.75  # 进入不应期温度阈值
-    # refractory_exit: 0.30       # 退出不应期温度阈值
-    # natural_cooling_rate: 0.05  # 每分钟降温系数
+    refractory_threshold: 0.75  # 进入不应期温度阈值
+    refractory_exit: 0.30       # 退出不应期温度阈值
+    natural_cooling_rate: 0.05  # 每分钟降温系数
 
   # 驱力竞争
   drive:

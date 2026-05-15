@@ -17,7 +17,7 @@ import logging
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-from backend.services.stt import create_recognizer
+from backend.services.stt import VOSK_AVAILABLE, create_recognizer
 
 router = APIRouter(prefix="/stt", tags=["stt"])
 _log = logging.getLogger(__name__)
@@ -26,6 +26,13 @@ _log = logging.getLogger(__name__)
 @router.websocket("/ws")
 async def stt_websocket(ws: WebSocket):
     await ws.accept()
+
+    if not VOSK_AVAILABLE:
+        _log.warning("STT WebSocket 请求被拒绝: vosk 未安装")
+        await ws.send_json({"type": "error", "message": "语音识别不可用: vosk 未安装，请安装 stt 可选依赖"})
+        await ws.close(code=1011, reason="vosk not available")
+        return
+
     _log.info("STT WebSocket 连接已建立 (前端控制模式)")
     rec = None
 

@@ -9,12 +9,11 @@ dependencies = [
   # feishu: lark-oapi — 嵌入式消息网关加载 FeishuAdapter 所需；否则日志会报 Feishu 不可用且永不连平台
   "hermes-agent[web,mcp,pty,feishu]",
   "neo4j>=6.2.0",
-  "vosk>=0.3.45",
 ]
 
 [project.optional-dependencies]
-mem = [
-  "memos>=0.30.0",
+stt = [
+  "vosk>=0.3.44",
 ]
 test = [
   "pytest>=8",
